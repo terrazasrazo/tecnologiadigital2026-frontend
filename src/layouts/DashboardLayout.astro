@@ -57,6 +57,14 @@ const currentPath = Astro.url.pathname;
             >
               {user.role.name}
             </span>
+            <form method="post" action="/logout">
+              <button
+                type="submit"
+                class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+              >
+                Salir
+              </button>
+            </form>
           </div>
         </header>
         <main class="flex-1 p-4 sm:p-6 lg:p-8">

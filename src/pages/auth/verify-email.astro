@@ -1,0 +1,30 @@
+---
+import AuthLayout from '../../layouts/AuthLayout.astro';
+import VerifyEmail from '../../components/auth/VerifyEmail';
+import ResendVerification from '../../components/auth/ResendVerification';
+
+const token = Astro.url.searchParams.get('token');
+---
+
+<AuthLayout
+  title="Verificar correo"
+  subtitle="Activa tu cuenta para poder iniciar sesión."
+>
+  {
+    token ? (
+      <VerifyEmail client:load token={token} />
+    ) : (
+      <div class="flex flex-col gap-4">
+        <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          El enlace de verificación no es válido o está incompleto.
+        </div>
+        <ResendVerification client:load />
+        <p class="text-center text-sm text-slate-500">
+          <a href="/auth/login" class="font-medium text-blue-600 hover:text-blue-700">
+            Iniciar sesión
+          </a>
+        </p>
+      </div>
+    )
+  }
+</AuthLayout>

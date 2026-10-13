@@ -1,0 +1,56 @@
+/**
+ * Fetch del lado del navegador para los endpoints propios de Astro
+ * (`/api/session`, `/api/auth/*`). El backend nunca se llama desde el cliente.
+ */
+
+export class ClientApiError extends Error {
+  readonly code: string;
+  readonly status: number;
+  readonly details: unknown;
+
+  constructor(status: number, code: string, message: string, details?: unknown) {
+    super(message);
+    this.name = 'ClientApiError';
+    this.status = status;
+    this.code = code;
+    this.details = details;
+  }
+}
+
+/** POST JSON a un endpoint de Astro. Lanza `ClientApiError` ante fallos. */
+export async function postJson<T = unknown>(url: string, body?: unknown): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      credentials: 'same-origin',
+    });
+  } catch {
+    throw new ClientApiError(0, 'NETWORK_ERROR', 'No se pudo conectar con el servidor.');
+  }
+
+  const text = await res.text();
+  let data: unknown = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = null;
+    }
+  }
+
+  if (!res.ok) {
+    const err = (data as { error?: { code?: string; message?: string; details?: unknown } } | null)
+      ?.error;
+    throw new ClientApiError(
+      res.status,
+      err?.code ?? 'UNKNOWN',
+      err?.message ?? `Error ${res.status}`,
+      err?.details,
+    );
+  }
+
+  return data as T;
+}
