@@ -1,0 +1,68 @@
+---
+import '../styles/global.css';
+import Sidebar from '../components/layout/Sidebar.astro';
+import MobileNav from '../components/layout/MobileNav';
+import type { User } from '../lib/types';
+import { navItemsFor } from '../lib/nav';
+import { HOME_BY_ROLE } from '../lib/constants';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+const user = Astro.locals.user as User;
+const navItems = navItemsFor(user.role.name);
+const panelHref = HOME_BY_ROLE[user.role.name];
+
+// Ruta actual para resaltar el enlace activo del sidebar.
+const currentPath = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title ? `${title} · ` : ''}Congreso 2026</title>
+    {description && <meta name="description" content={description} />}
+  </head>
+  <body class="min-h-screen bg-slate-100">
+    <div class="flex min-h-screen">
+      <Sidebar user={user} currentPath={currentPath} />
+      <div class="flex min-w-0 flex-1 flex-col">
+        <header
+          class="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-slate-200 bg-white/90 px-4 backdrop-blur sm:px-6"
+        >
+          <div class="flex items-center gap-3 lg:hidden">
+            <MobileNav
+              client:media="(max-width: 1023px)"
+              items={navItems}
+              panelHref={panelHref}
+              loggedIn={true}
+            />
+            {title && <span class="font-semibold text-slate-900">{title}</span>}
+          </div>
+          <div class="hidden lg:block">
+            {title && <h1 class="text-lg font-semibold text-slate-900">{title}</h1>}
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="hidden text-sm text-slate-500 sm:inline">{user.email}</span>
+            <span
+              class="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium capitalize text-blue-700"
+            >
+              {user.role.name}
+            </span>
+          </div>
+        </header>
+        <main class="flex-1 p-4 sm:p-6 lg:p-8">
+          <slot />
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

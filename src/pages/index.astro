@@ -1,0 +1,75 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import { ROUTES } from '../lib/constants';
+
+// En el Milestone 3 aquí se cargarán agenda y ponentes desde el API.
+const user = Astro.locals.user;
+---
+
+<PublicLayout
+  title="Congreso 2026 — Información del evento"
+  description="Agenda, ponentes y registro de asistentes del Congreso 2026."
+>
+  <!-- Hero -->
+  <section class="bg-gradient-to-b from-blue-700 to-blue-900 text-white">
+    <div class="mx-auto max-w-7xl px-4 py-20 text-center sm:px-6 lg:py-28">
+      <p class="text-sm font-semibold uppercase tracking-widest text-blue-200">
+        Congreso académico · Edición 2026
+      </p>
+      <h1 class="mt-4 text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+        Congreso 2026
+      </h1>
+      <p class="mx-auto mt-6 max-w-2xl text-lg text-blue-100">
+        Encuentro de investigación y tecnología. Revisa la agenda, conoce a los ponentes y
+        regístrate para asistir a las conferencias.
+      </p>
+      <div class="mt-10 flex flex-wrap items-center justify-center gap-4">
+        <a
+          href={user ? ROUTES.app : ROUTES.register}
+          class="rounded-lg bg-white px-6 py-3 font-semibold text-blue-800 shadow-sm transition-colors hover:bg-blue-50"
+        >
+          {user ? 'Ir a mi panel' : 'Registrarme'}
+        </a>
+        <a
+          href={ROUTES.agenda}
+          class="rounded-lg border border-blue-400 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-800"
+        >
+          Ver agenda
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Secciones rápidas -->
+  <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+    <div class="grid gap-6 sm:grid-cols-3">
+      <a
+        href={ROUTES.agenda}
+        class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
+      >
+        <h2 class="text-lg font-semibold text-slate-900">Agenda</h2>
+        <p class="mt-2 text-sm text-slate-500">
+          Consulta las ponencias por día y ubícate en el salón correcto.
+        </p>
+      </a>
+      <a
+        href={ROUTES.ponentes}
+        class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
+      >
+        <h2 class="text-lg font-semibold text-slate-900">Ponentes</h2>
+        <p class="mt-2 text-sm text-slate-500">
+          Conoce a los especialistas que participan en esta edición.
+        </p>
+      </a>
+      <a
+        href={ROUTES.register}
+        class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
+      >
+        <h2 class="text-lg font-semibold text-slate-900">Registro</h2>
+        <p class="mt-2 text-sm text-slate-500">
+          Crea tu cuenta para inscribirte, registrar asistencia y descargar constancias.
+        </p>
+      </a>
+    </div>
+  </section>
+</PublicLayout>
