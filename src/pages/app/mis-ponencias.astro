@@ -1,0 +1,120 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import RegistrationCard from '../../components/talks/RegistrationCard.astro';
+import EmptyState from '../../components/ui/EmptyState';
+import ErrorState from '../../components/ui/ErrorState';
+import { myRegistrations } from '../../lib/api/attendance';
+import { list as listTalks } from '../../lib/api/talks';
+import { fetchAllPages } from '../../lib/api/helpers';
+import { ApiError } from '../../lib/utils';
+import { messageFor } from '../../lib/errorMessages';
+import type { Registration, Talk } from '../../lib/types';
+
+const token = Astro.locals.accessToken;
+
+let registrations: Registration[] = [];
+let talks: Talk[] = [];
+let loadError: string | null = null;
+
+const [regResult, talksResult] = await Promise.allSettled([
+  myRegistrations(token!),
+  fetchAllPages(listTalks, {}),
+]);
+
+if (regResult.status === 'fulfilled') registrations = regResult.value.data;
+else {
+  const err = regResult.reason;
+  loadError = err instanceof ApiError ? messageFor(err.code, err.message) : 'No se pudieron cargar tus inscripciones.';
+}
+if (talksResult.status === 'fulfilled') talks = talksResult.value;
+
+// Mis inscripciones, con la ponencia ordenada por fecha.
+const misInscripciones = [...registrations].sort((a, b) => {
+  const da = a.talk?.date ?? '';
+  const db = b.talk?.date ?? '';
+  return da.localeCompare(db) || (a.talk?.startTime ?? '').localeCompare(b.talk?.startTime ?? '');
+});
+
+// Ponencias disponibles: programadas y aún no inscritas.
+const registeredIds = new Set(registrations.map((r) => r.talkId));
+const disponibles = talks
+  .filter((t) => t.status === 'scheduled' && !registeredIds.has(t.id))
+  .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+---
+
+<DashboardLayout title="Mis ponencias">
+  {
+    loadError ? (
+      <ErrorState title="No se pudieron cargar tus inscripciones" description={loadError} />
+    ) : (
+      <>
+        <section>
+          <h2 class="text-lg font-semibold text-slate-900">Mis inscripciones</h2>
+          <p class="mt-1 text-sm text-slate-500">
+            Cancela si no podrás asistir. Una vez registrada la asistencia no se puede cancelar.
+          </p>
+          <div class="mt-4 space-y-4">
+            {misInscripciones.length === 0 ? (
+              <EmptyState
+                title="Aún no te has inscrito"
+                description="Inscríbete en las ponencias que te interesen desde la lista siguiente o desde la agenda."
+                action={
+                  <a
+                    href="/agenda"
+                    class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                  >
+                    Ver agenda
+                  </a>
+                }
+              />
+            ) : (
+              misInscripciones.map((reg) => (
+                <RegistrationCard
+                  talk={{
+                    id: reg.talkId,
+                    title: reg.talk?.title ?? `Ponencia #${reg.talkId}`,
+                    date: reg.talk?.date ?? '',
+                    startTime: reg.talk?.startTime ?? '',
+                    endTime: reg.talk?.endTime ?? '',
+                    locationName: reg.talk?.location?.name,
+                  }}
+                  status={reg.status}
+                  action={reg.status === 'registered' ? 'cancel' : undefined}
+                  talkCancelled={reg.talk?.status === 'cancelled'}
+                />
+              ))
+            )}
+          </div>
+        </section>
+
+        <section class="mt-10">
+          <h2 class="text-lg font-semibold text-slate-900">Ponencias disponibles</h2>
+          <p class="mt-1 text-sm text-slate-500">Inscríbete en las que quieras asistir.</p>
+          <div class="mt-4 space-y-4">
+            {disponibles.length === 0 ? (
+              <EmptyState
+                title="No hay más ponencias disponibles"
+                description="Ya estás inscrito en todo el programa o no quedan ponencias abiertas."
+              />
+            ) : (
+              disponibles.map((talk) => (
+                <RegistrationCard
+                  talk={{
+                    id: talk.id,
+                    title: talk.title,
+                    date: talk.date,
+                    startTime: talk.startTime,
+                    endTime: talk.endTime,
+                    locationName: talk.location?.name,
+                  }}
+                  action="register"
+                  talkCancelled={talk.status === 'cancelled'}
+                />
+              ))
+            )}
+          </div>
+        </section>
+      </>
+    )
+  }
+</DashboardLayout>

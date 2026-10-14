@@ -1,0 +1,38 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import ProfileForm from '../../components/auth/ProfileForm';
+import ChangePasswordForm from '../../components/auth/ChangePasswordForm';
+import Card from '../../components/ui/Card';
+import Badge from '../../components/ui/Badge';
+import { ROLE_LABELS, USER_STATUS_LABELS } from '../../lib/constants';
+
+const user = Astro.locals.user!;
+---
+
+<DashboardLayout title="Mi perfil">
+  <div class="grid max-w-4xl gap-6 lg:grid-cols-2">
+    <Card title="Datos personales">
+      <div class="mb-4 flex flex-wrap items-center gap-2">
+        <Badge variant="blue">{ROLE_LABELS[user.role.name]}</Badge>
+        <Badge variant={user.status === 'active' ? 'green' : 'amber'}>
+          {USER_STATUS_LABELS[user.status]}
+        </Badge>
+      </div>
+      <ProfileForm
+        client:visible
+        initial={{
+          name: user.name,
+          lastName: user.lastName,
+          email: user.email,
+          entity: user.entity,
+          educationLevel: user.educationLevel,
+          phone: user.phone,
+        }}
+      />
+    </Card>
+
+    <Card title="Cambiar contraseña">
+      <ChangePasswordForm client:visible />
+    </Card>
+  </div>
+</DashboardLayout>

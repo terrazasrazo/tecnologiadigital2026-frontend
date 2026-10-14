@@ -1,0 +1,108 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import EligibilityBar from '../../components/certificates/EligibilityBar.astro';
+import CertificateCard from '../../components/certificates/CertificateCard.astro';
+import CertificateDownload from '../../components/certificates/CertificateDownload';
+import ErrorState from '../../components/ui/ErrorState';
+import { eligibility as getEligibility, mine as getMine } from '../../lib/api/certificates';
+import { ApiError, formatDateLong } from '../../lib/utils';
+import { messageFor } from '../../lib/errorMessages';
+import type { Certificate, Eligibility } from '../../lib/types';
+
+const token = Astro.locals.accessToken;
+
+let eligibility: Eligibility | null = null;
+let certificate: Certificate | null = null;
+let loadError: string | null = null;
+
+const [eligResult, certResult] = await Promise.allSettled([
+  getEligibility(token!),
+  getMine(token!),
+]);
+
+if (eligResult.status === 'fulfilled') {
+  eligibility = eligResult.value;
+} else {
+  const err = eligResult.reason;
+  loadError =
+    err instanceof ApiError ? messageFor(err.code, err.message) : 'No se pudo consultar tu progreso.';
+}
+
+// 404 CERTIFICATE_NOT_FOUND es normal: aún no genera su constancia.
+if (certResult.status === 'fulfilled') {
+  certificate = certResult.value;
+} else if (certResult.reason instanceof ApiError && certResult.reason.status !== 404) {
+  loadError = messageFor(certResult.reason.code, certResult.reason.message);
+}
+---
+
+<DashboardLayout title="Constancia">
+  {
+    loadError ? (
+      <ErrorState title="No se pudo cargar la constancia" description={loadError} />
+    ) : (
+      <>
+        <div class="max-w-2xl">
+          {eligibility && <EligibilityBar eligibility={eligibility} />}
+        </div>
+
+        <div class="mt-6 max-w-2xl">
+          {certificate ? (
+            <div class="space-y-4">
+              <CertificateCard certificate={certificate} />
+              <CertificateDownload client:visible hasCertificate={true} />
+            </div>
+          ) : eligibility?.eligible ? (
+            <div class="rounded-xl border border-blue-100 bg-blue-50 p-5">
+              <p class="font-semibold text-blue-900">¡Ya cumples los requisitos!</p>
+              <p class="mt-1 text-sm text-blue-800">
+                Genera tu constancia: se creará el PDF con tus ponencias y horas, y recibirás una
+                copia en tu correo.
+              </p>
+              <div class="mt-4">
+                <CertificateDownload client:visible hasCertificate={false} />
+              </div>
+            </div>
+          ) : (
+            <div class="rounded-xl border border-amber-100 bg-amber-50 p-5">
+              <p class="font-semibold text-amber-900">Aún no cumples los requisitos</p>
+              <p class="mt-1 text-sm text-amber-800">
+                Sigue asistiendo a ponencias para alcanzar el mínimo requerido. Tu progreso está
+                arriba.
+              </p>
+              <a
+                href="/app/mis-ponencias"
+                class="mt-3 inline-block text-sm font-semibold text-blue-600 hover:text-blue-700"
+              >
+                Inscribirme en más ponencias →
+              </a>
+            </div>
+          )}
+        </div>
+
+        {eligibility && eligibility.talks.length > 0 && (
+          <section class="mt-10 max-w-2xl">
+            <h2 class="text-lg font-semibold text-slate-900">
+              Ponencias contabilizadas ({eligibility.talks.length})
+            </h2>
+            <ul class="mt-4 divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
+              {eligibility.talks.map((talk) => (
+                <li class="flex items-center justify-between gap-4 px-5 py-3">
+                  <div class="min-w-0">
+                    <p class="truncate text-sm font-medium text-slate-900">
+                      <a href={`/agenda/${talk.id}`} class="hover:text-blue-700">
+                        {talk.title}
+                      </a>
+                    </p>
+                    <p class="text-xs text-slate-500">{formatDateLong(talk.date)}</p>
+                  </div>
+                  <span class="shrink-0 text-sm text-slate-500">{talk.durationMinutes} min</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </>
+    )
+  }
+</DashboardLayout>

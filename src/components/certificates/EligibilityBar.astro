@@ -1,0 +1,89 @@
+---
+import type { Eligibility } from '../../lib/types';
+
+interface Props {
+  eligibility: Eligibility;
+}
+
+const { eligibility: e } = Astro.props;
+
+interface Bar {
+  label: string;
+  current: number;
+  target: number;
+  unit: string;
+}
+
+const bars: Bar[] = [];
+if (e.threshold.minTalks && (e.metric === 'talks' || e.metric === 'both')) {
+  bars.push({ label: 'Ponencias', current: e.talksCount, target: e.threshold.minTalks, unit: '' });
+}
+if (e.threshold.minHours && (e.metric === 'hours' || e.metric === 'both')) {
+  bars.push({ label: 'Horas', current: e.hoursTotal, target: e.threshold.minHours, unit: ' h' });
+}
+---
+
+<div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+  <div class="flex items-center justify-between gap-4">
+    <div>
+      <h2 class="text-sm font-semibold text-slate-900">Progreso de constancia</h2>
+      <p class="mt-1 text-xs text-slate-500">
+        {e.metric === 'both'
+          ? 'Se requieren ponencias Y horas acumuladas.'
+          : e.metric === 'talks'
+            ? 'Se requiere un número mínimo de ponencias.'
+            : 'Se requiere un mínimo de horas acumuladas.'}
+      </p>
+    </div>
+    <span
+      class:list={[
+        'rounded-full px-3 py-1 text-xs font-semibold',
+        e.eligible ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700',
+      ]}
+    >
+      {e.eligible ? '¡Elegible!' : 'En camino'}
+    </span>
+  </div>
+
+  <div class="mt-4 space-y-4">
+    {
+      bars.length > 0 ? (
+        bars.map((bar) => {
+          const pct = Math.min(100, Math.round((bar.current / bar.target) * 100));
+          return (
+            <div>
+              <div class="flex items-baseline justify-between text-sm">
+                <span class="text-slate-600">{bar.label}</span>
+                <span class="font-semibold text-slate-900">
+                  {bar.current}
+                  {bar.unit} de {bar.target}
+                  {bar.unit}
+                </span>
+              </div>
+              <div class="mt-1.5 h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+                <div
+                  class:list={[
+                    'h-full rounded-full transition-all',
+                    pct >= 100 ? 'bg-emerald-500' : 'bg-blue-600',
+                  ]}
+                  style={`width:${pct}%`}
+                />
+              </div>
+            </div>
+          );
+        })
+      ) : (
+        <div class="grid grid-cols-2 gap-4 text-center">
+          <div class="rounded-lg bg-slate-50 p-3">
+            <p class="text-2xl font-bold text-slate-900">{e.talksCount}</p>
+            <p class="text-xs text-slate-500">Ponencias asistidas</p>
+          </div>
+          <div class="rounded-lg bg-slate-50 p-3">
+            <p class="text-2xl font-bold text-slate-900">{e.hoursTotal} h</p>
+            <p class="text-xs text-slate-500">Horas acumuladas</p>
+          </div>
+        </div>
+      )
+    }
+  </div>
+</div>

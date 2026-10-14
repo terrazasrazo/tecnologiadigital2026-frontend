@@ -97,6 +97,30 @@ export function toQuery(params: Record<string, string | number | boolean | undef
   return str ? `?${str}` : '';
 }
 
+/**
+ * Decodifica el contenido de un QR de asistencia (JWT firmado por el backend
+ * con payload `{ talkId, purpose: 'attendance' }`).
+ *
+ * No verifica la firma — eso lo hace el backend en el check-in; aquí solo se
+ * extrae `talkId` para saber a qué endpoint enviar el token.
+ */
+export function parseQrToken(raw: string): { talkId: number; token: string } | null {
+  const token = raw.trim();
+  if (!token) return null;
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  try {
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(base64)) as { talkId?: unknown; purpose?: unknown };
+    if (payload.purpose !== undefined && payload.purpose !== 'attendance') return null;
+    const talkId = Number(payload.talkId);
+    if (!Number.isInteger(talkId) || talkId <= 0) return null;
+    return { talkId, token };
+  } catch {
+    return null;
+  }
+}
+
 /** Une la URL base de la API con un path, evitando barras duplicadas. */
 export function apiUrl(base: string, path: string): string {
   return `${base.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;

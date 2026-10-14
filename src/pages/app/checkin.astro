@@ -1,0 +1,57 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import CheckInPanel from '../../components/attendance/CheckInPanel';
+import ErrorState from '../../components/ui/ErrorState';
+import { myRegistrations } from '../../lib/api/attendance';
+import { list as listTalks } from '../../lib/api/talks';
+import { fetchAllPages } from '../../lib/api/helpers';
+import { ApiError } from '../../lib/utils';
+import { messageFor } from '../../lib/errorMessages';
+import type { CheckInTalk } from '../../components/attendance/CheckInPanel';
+
+const token = Astro.locals.accessToken;
+
+let panelTalks: CheckInTalk[] = [];
+let loadError: string | null = null;
+
+const [regResult, talksResult] = await Promise.allSettled([
+  myRegistrations(token!),
+  fetchAllPages(listTalks, {}),
+]);
+
+if (regResult.status === 'fulfilled' && talksResult.status === 'fulfilled') {
+  const registeredIds = new Set(regResult.value.data.map((r) => r.talkId));
+  panelTalks = talksResult.value
+    .filter((t) => registeredIds.has(t.id) && t.attendanceWindow?.opensAt)
+    .map((t) => ({
+      id: t.id,
+      title: t.title,
+      date: t.date,
+      startTime: t.startTime,
+      endTime: t.endTime,
+      opensAt: t.attendanceWindow.opensAt,
+      closesAt: t.attendanceWindow.closesAt,
+    }));
+} else {
+  const failed = regResult.status === 'rejected' ? regResult.reason : talksResult.reason;
+  loadError =
+    failed instanceof ApiError ? messageFor(failed.code, failed.message) : 'No se pudo cargar el check-in.';
+}
+---
+
+<DashboardLayout title="Check-in">
+  <div class="mb-6 max-w-2xl">
+    <p class="text-sm text-slate-500">
+      Escanea el QR que el organizador proyecta al finalizar la ponencia. El registro solo funciona
+      dentro de la ventana de asistencia de cada ponencia.
+    </p>
+  </div>
+
+  {
+    loadError ? (
+      <ErrorState title="No se pudo cargar el check-in" description={loadError} />
+    ) : (
+      <CheckInPanel client:load talks={panelTalks} />
+    )
+  }
+</DashboardLayout>

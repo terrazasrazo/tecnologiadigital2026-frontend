@@ -2,7 +2,9 @@
 import PublicLayout from '../../layouts/PublicLayout.astro';
 import Badge from '../../components/ui/Badge';
 import ErrorState from '../../components/ui/ErrorState';
+import AttendanceButton from '../../components/attendance/AttendanceButton';
 import { getById } from '../../lib/api/talks';
+import { myRegistrations } from '../../lib/api/attendance';
 import { publicUrl } from '../../lib/api/client';
 import { ApiError, formatDateLong, formatDuration } from '../../lib/utils';
 import { messageFor } from '../../lib/errorMessages';
@@ -13,6 +15,10 @@ const user = Astro.locals.user;
 let talk = null;
 let error: string | null = null;
 let errorCode: string | undefined;
+/** Estado de inscripción del usuario actual (solo asistentes). */
+let registered = false;
+let attended = false;
+let hasRegistration = false;
 
 if (!Number.isInteger(id) || id <= 0) {
   error = 'La ponencia no existe.';
@@ -29,6 +35,19 @@ if (!Number.isInteger(id) || id <= 0) {
       error = 'No se pudo cargar la ponencia.';
       Astro.response.status = 502;
     }
+  }
+}
+
+// Si es asistente, consultar su inscripción para mostrar el botón adecuado.
+if (talk && user?.role.name === 'asistente' && Astro.locals.accessToken) {
+  try {
+    const { data } = await myRegistrations(Astro.locals.accessToken);
+    const reg = data.find((r) => r.talkId === talk.id);
+    hasRegistration = Boolean(reg);
+    registered = reg?.status === 'registered';
+    attended = reg?.status === 'attended';
+  } catch {
+    // La información de inscripción es opcional: se degradaría al CTA genérico.
   }
 }
 
@@ -138,21 +157,45 @@ const locationFull = location
 
           <section class="mt-10 rounded-xl border border-blue-100 bg-blue-50 p-5">
             <h2 class="font-semibold text-blue-900">¿Vas a asistir?</h2>
-            <p class="mt-1 text-sm text-blue-800">
-              {user
-                ? 'Inscríbete y registra tu asistencia desde tu panel. Las inscripciones y el check-in se gestionan en "Mis ponencias".'
-                : 'Inicia sesión o crea una cuenta para inscribirte y registrar tu asistencia.'}
-            </p>
-            <div class="mt-4 flex flex-wrap gap-3">
-              {user ? (
-                <a
-                  href="/app/mis-ponencias"
-                  class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                >
-                  Ir a mis ponencias
-                </a>
-              ) : (
-                <>
+            {user?.role.name === 'asistente' ? (
+              <>
+                <p class="mt-1 text-sm text-blue-800">
+                  {attended
+                    ? 'Ya registraste tu asistencia en esta ponencia. Sigue acumulando horas para tu constancia.'
+                    : registered
+                      ? 'Estás inscrito en esta ponencia. No olvides registrar tu asistencia con el QR al finalizar.'
+                      : hasRegistration
+                        ? 'Tu inscripción anterior fue cancelada. Puedes volver a inscribirte.'
+                        : 'Inscríbete para reservar tu lugar y acumular horas hacia tu constancia.'}
+                </p>
+                <div class="mt-4 flex flex-wrap items-center gap-3">
+                  {!attended && (
+                    <AttendanceButton
+                      client:visible
+                      talkId={talk.id}
+                      registered={registered}
+                      talkCancelled={talk.status === 'cancelled'}
+                    />
+                  )}
+                  <a
+                    href="/app/mis-ponencias"
+                    class="text-sm font-medium text-blue-700 hover:text-blue-900"
+                  >
+                    Ir a mis ponencias →
+                  </a>
+                </div>
+              </>
+            ) : user ? (
+              <p class="mt-1 text-sm text-blue-800">
+                Las inscripciones y el check-in están disponibles para el rol asistente desde su
+                panel.
+              </p>
+            ) : (
+              <>
+                <p class="mt-1 text-sm text-blue-800">
+                  Inicia sesión o crea una cuenta para inscribirte y registrar tu asistencia.
+                </p>
+                <div class="mt-4 flex flex-wrap gap-3">
                   <a
                     href={`/auth/login?redirect=${encodeURIComponent(`/agenda/${talk.id}`)}`}
                     class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
@@ -165,9 +208,9 @@ const locationFull = location
                   >
                     Crear cuenta
                   </a>
-                </>
-              )}
-            </div>
+                </div>
+              </>
+            )}
           </section>
         </article>
       )

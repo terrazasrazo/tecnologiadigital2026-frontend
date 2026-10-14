@@ -47,6 +47,20 @@ export function clearSession(cookies: AstroCookies): void {
   }
 }
 
+/**
+ * Actualiza solo la cookie legible del perfil (p. ej. tras editar el perfil
+ * desde `/app/perfil`), manteniendo los tokens intactos.
+ */
+export function setSessionUser(cookies: AstroCookies, user: User): void {
+  cookies.set(COOKIES.sessionUser, JSON.stringify(user), {
+    httpOnly: false,
+    sameSite: 'lax',
+    secure: SECURE,
+    path: '/',
+    maxAge: REFRESH_MAX_AGE,
+  });
+}
+
 export function getAccessToken(cookies: AstroCookies): string | null {
   return cookies.get(COOKIES.accessToken)?.value ?? null;
 }

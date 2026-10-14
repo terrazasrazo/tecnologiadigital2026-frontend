@@ -1,0 +1,144 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import EligibilityBar from '../../components/certificates/EligibilityBar.astro';
+import RegistrationStatus from '../../components/attendance/RegistrationStatus';
+import ErrorState from '../../components/ui/ErrorState';
+import Card from '../../components/ui/Card';
+import { myRegistrations } from '../../lib/api/attendance';
+import { eligibility as getEligibility } from '../../lib/api/certificates';
+import { messageFor } from '../../lib/errorMessages';
+import { ApiError, formatDateLong } from '../../lib/utils';
+import type { Eligibility, Registration } from '../../lib/types';
+
+const token = Astro.locals.accessToken;
+const user = Astro.locals.user!;
+
+let registrations: Registration[] = [];
+let eligibility: Eligibility | null = null;
+let loadError: string | null = null;
+
+const [regResult, eligResult] = await Promise.allSettled([
+  myRegistrations(token!),
+  getEligibility(token!),
+]);
+
+if (regResult.status === 'fulfilled') {
+  registrations = regResult.value.data;
+} else {
+  const err = regResult.reason;
+  loadError = err instanceof ApiError ? messageFor(err.code, err.message) : 'No se pudo cargar tu información.';
+}
+
+if (eligResult.status === 'fulfilled') {
+  eligibility = eligResult.value;
+}
+
+const inscritas = registrations.filter((r) => r.status === 'registered').length;
+const asistidas = registrations.filter((r) => r.status === 'attended').length;
+
+const today = new Date();
+const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+const próximas = registrations
+  .filter((r) => r.talk && r.talk.date >= todayIso)
+  .sort((a, b) => (a.talk!.date).localeCompare(b.talk!.date) || a.talk!.startTime.localeCompare(b.talk!.startTime))
+  .slice(0, 4);
+
+const quickLinks = [
+  { href: '/app/mis-ponencias', title: 'Mis ponencias', desc: 'Inscríbete o cancela inscripciones.' },
+  { href: '/app/checkin', title: 'Check-in', desc: 'Registra tu asistencia con el QR.' },
+  { href: '/app/constancia', title: 'Constancia', desc: 'Consulta tu progreso y descarga.' },
+  { href: '/app/perfil', title: 'Mi perfil', desc: 'Actualiza tus datos personales.' },
+];
+---
+
+<DashboardLayout title="Mi panel">
+  {
+    loadError ? (
+      <ErrorState title="No se pudo cargar tu panel" description={loadError} />
+    ) : (
+      <>
+        <p class="mb-6 text-sm text-slate-500">
+          Hola, <span class="font-semibold text-slate-900">{user.name}</span>. Este es tu resumen
+          en el Congreso 2026.
+        </p>
+
+        {/* Estadísticas */}
+        <div class="grid gap-4 sm:grid-cols-3">
+          <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p class="text-3xl font-bold text-slate-900">{inscritas}</p>
+            <p class="mt-1 text-sm text-slate-500">Ponencias inscritas</p>
+          </div>
+          <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p class="text-3xl font-bold text-emerald-600">{asistidas}</p>
+            <p class="mt-1 text-sm text-slate-500">Asistencias registradas</p>
+          </div>
+          <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p class="text-3xl font-bold text-blue-600">{eligibility?.hoursTotal ?? 0} h</p>
+            <p class="mt-1 text-sm text-slate-500">Horas acumuladas</p>
+          </div>
+        </div>
+
+        {/* Progreso de constancia */}
+        <div class="mt-6">{eligibility && <EligibilityBar eligibility={eligibility} />}</div>
+
+        {/* Próximas ponencias */}
+        <section class="mt-8">
+          <div class="mb-4 flex items-end justify-between">
+            <h2 class="text-lg font-semibold text-slate-900">Próximas ponencias</h2>
+            <a href="/app/mis-ponencias" class="text-sm font-semibold text-blue-600 hover:text-blue-700">
+              Ver todas →
+            </a>
+          </div>
+          {próximas.length === 0 ? (
+            <div class="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center">
+              <p class="text-sm font-medium text-slate-900">No tienes ponencias próximas</p>
+              <p class="mt-1 text-sm text-slate-500">
+                Inscríbete desde la{' '}
+                <a href="/agenda" class="font-medium text-blue-600 hover:text-blue-700">
+                  agenda
+                </a>{' '}
+                para empezar a acumular horas.
+              </p>
+            </div>
+          ) : (
+            <ul class="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
+              {próximas.map(({ talk, status }) => (
+                <li class="flex items-center justify-between gap-4 px-5 py-4">
+                  <div class="min-w-0">
+                    <p class="truncate font-medium text-slate-900">
+                      <a href={`/agenda/${talk!.id}`} class="hover:text-blue-700">
+                        {talk!.title}
+                      </a>
+                    </p>
+                    <p class="mt-0.5 text-sm text-slate-500">
+                      {formatDateLong(talk!.date)} · {talk!.startTime} – {talk!.endTime}
+                      {talk!.location ? ` · ${talk!.location.name}` : ''}
+                    </p>
+                  </div>
+                  <RegistrationStatus status={status} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Accesos rápidos */}
+        <section class="mt-8">
+          <h2 class="mb-4 text-lg font-semibold text-slate-900">Accesos rápidos</h2>
+          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {quickLinks.map((link) => (
+              <a
+                href={link.href}
+                class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+              >
+                <p class="font-semibold text-slate-900">{link.title}</p>
+                <p class="mt-1 text-sm text-slate-500">{link.desc}</p>
+              </a>
+            ))}
+          </div>
+        </section>
+      </>
+    )
+  }
+</DashboardLayout>
