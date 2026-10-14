@@ -1,0 +1,94 @@
+---
+import PublicLayout from '../../layouts/PublicLayout.astro';
+import SpeakerCard from '../../components/speakers/SpeakerCard.astro';
+import EmptyState from '../../components/ui/EmptyState';
+import ErrorState from '../../components/ui/ErrorState';
+import { list as listSpeakers } from '../../lib/api/speakers';
+import { fetchAllPages } from '../../lib/api/helpers';
+import { ApiError } from '../../lib/utils';
+import { messageFor } from '../../lib/errorMessages';
+import type { Speaker } from '../../lib/types';
+
+const q = (Astro.url.searchParams.get('q') ?? '').trim();
+
+let speakers: Speaker[] = [];
+let loadError: string | null = null;
+
+try {
+  speakers = await fetchAllPages(listSpeakers, {});
+} catch (err) {
+  loadError =
+    err instanceof ApiError ? messageFor(err.code, err.message) : 'No se pudieron cargar los ponentes.';
+}
+
+const needle = q.toLowerCase();
+const filtered = q
+  ? speakers.filter(
+      (s) =>
+        s.name.toLowerCase().includes(needle) ||
+        (s.institution ?? '').toLowerCase().includes(needle) ||
+        (s.academicDegree ?? '').toLowerCase().includes(needle),
+    )
+  : speakers;
+
+const fieldClass =
+  'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500';
+---
+
+<PublicLayout
+  title="Ponentes"
+  description="Conoce a los ponentes del Congreso 2026: semblanzas, instituciones y ponencias."
+>
+  <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:py-14">
+    <header class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-slate-900">Ponentes</h1>
+        <p class="mt-2 text-slate-500">Especialistas que participan en esta edición.</p>
+      </div>
+      <form method="get" class="flex w-full gap-2 sm:w-auto">
+        <label class="sr-only" for="q">Buscar ponente</label>
+        <input
+          type="search"
+          id="q"
+          name="q"
+          value={q}
+          placeholder="Buscar por nombre o institución…"
+          class={fieldClass}
+        />
+        <button
+          type="submit"
+          class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+        >
+          Buscar
+        </button>
+      </form>
+    </header>
+
+    {
+      loadError ? (
+        <ErrorState title="No se pudieron cargar los ponentes" description={loadError} />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          title={q ? 'Sin resultados' : 'Aún no hay ponentes registrados'}
+          description={q ? 'Prueba con otro nombre o institución.' : 'Vuelve pronto, la lista se está actualizando.'}
+          action={
+            q ? (
+              <a
+                href="/ponentes"
+                class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                Ver todos
+              </a>
+            ) : undefined
+          }
+        />
+      ) : (
+        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filtered.map((speaker) => (
+            <SpeakerCard speaker={speaker} />
+          ))}
+        </div>
+      )
+    }
+  </div>
+</PublicLayout>

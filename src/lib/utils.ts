@@ -26,20 +26,37 @@ export class ApiError extends Error {
   }
 }
 
-/** Formatea una fecha ISO como `dd/mm/aaaa`. */
+/** Crea una fecha local a partir de una cadena `AAAA-MM-DD` (evita el desfase de zona horaria). */
+function parseDateOnly(iso: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return null;
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+}
+
+/** Formatea una fecha como `dd/mm/aaaa`. Acepta ISO o `AAAA-MM-DD`. */
 export function formatDate(iso: string): string {
-  const date = new Date(iso);
+  const date = parseDateOnly(iso) ?? new Date(iso);
   return date.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-/** Formatea una fecha ISO con día de la semana: `lunes, 12 de octubre de 2026`. */
+/** Formatea una fecha con día de la semana: `lunes, 12 de octubre de 2026`. */
 export function formatDateLong(iso: string): string {
-  const date = new Date(iso);
+  const date = parseDateOnly(iso) ?? new Date(iso);
   return date.toLocaleDateString('es-MX', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',
+  });
+}
+
+/** Etiqueta corta de día para la agenda: `lun 12 oct`. */
+export function formatDayLabel(iso: string): string {
+  const date = parseDateOnly(iso) ?? new Date(iso);
+  return date.toLocaleDateString('es-MX', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
   });
 }
 

@@ -1,0 +1,117 @@
+---
+import PublicLayout from '../layouts/PublicLayout.astro';
+import TalkCard from '../components/talks/TalkCard.astro';
+import TalkFilters from '../components/talks/TalkFilters.astro';
+import EmptyState from '../components/ui/EmptyState';
+import ErrorState from '../components/ui/ErrorState';
+import { list as listTalks } from '../lib/api/talks';
+import { list as listLocations } from '../lib/api/locations';
+import { fetchAllPages } from '../lib/api/helpers';
+import { ApiError, formatDateLong } from '../lib/utils';
+import { messageFor } from '../lib/errorMessages';
+import type { Talk } from '../lib/types';
+
+const params = Astro.url.searchParams;
+const q = (params.get('q') ?? '').trim();
+const date = params.get('date') ?? '';
+const locationId = params.get('location') ?? '';
+
+let talks: Talk[] = [];
+let locations: Awaited<ReturnType<typeof listLocations>>['data'] = [];
+let loadError: string | null = null;
+
+try {
+  const [allTalks, allLocations] = await Promise.all([
+    fetchAllPages(listTalks, {}),
+    fetchAllPages(listLocations, {}),
+  ]);
+  talks = allTalks;
+  locations = allLocations;
+} catch (err) {
+  loadError =
+    err instanceof ApiError
+      ? messageFor(err.code, err.message)
+      : 'No se pudo cargar la agenda.';
+}
+
+// Fechas y ubicaciones disponibles (derivadas de todo el programa).
+const dates = [...new Set(talks.map((t) => t.date))].sort();
+
+// Filtros (búsqueda sobre título, descripción y nombre de ponente).
+const needle = q.toLowerCase();
+const filtered = talks
+  .filter((t) => {
+    if (date && t.date !== date) return false;
+    if (locationId && String(t.location?.id ?? '') !== locationId) return false;
+    if (!needle) return true;
+    return (
+      t.title.toLowerCase().includes(needle) ||
+      (t.description ?? '').toLowerCase().includes(needle) ||
+      t.speakers.some((s) => s.name.toLowerCase().includes(needle))
+    );
+  })
+  .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+
+// Agrupar por día.
+const groups: Array<{ date: string; talks: Talk[] }> = [];
+for (const talk of filtered) {
+  const last = groups[groups.length - 1];
+  if (last && last.date === talk.date) last.talks.push(talk);
+  else groups.push({ date: talk.date, talks: [talk] });
+}
+---
+
+<PublicLayout
+  title="Agenda"
+  description="Programa completo de ponencias del Congreso 2026, con horarios, ponentes y ubicaciones."
+>
+  <div class="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:py-14">
+    <header class="mb-8">
+      <h1 class="text-3xl font-bold text-slate-900">Agenda</h1>
+      <p class="mt-2 text-slate-500">
+        Consulta las ponencias por día, ubicación o palabra clave.
+      </p>
+    </header>
+
+    {
+      loadError ? (
+        <ErrorState title="No se pudo cargar la agenda" description={loadError} />
+      ) : (
+        <>
+          <TalkFilters dates={dates} locations={locations} current={{ date, location: locationId, q }} />
+
+          <div class="mt-8 space-y-10">
+            {groups.length === 0 ? (
+              <EmptyState
+                title="No hay ponencias con esos filtros"
+                description="Prueba con otro día, otra ubicación o borra la búsqueda."
+                action={
+                  <a
+                    href="/agenda"
+                    class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                  >
+                    Ver toda la agenda
+                  </a>
+                }
+              />
+            ) : (
+              groups.map((group) => (
+                <section>
+                  <h2 class="mb-4 flex items-center gap-3 text-lg font-semibold capitalize text-slate-900">
+                    <span class="h-6 w-1.5 rounded-full bg-blue-600" aria-hidden="true" />
+                    {formatDateLong(group.date)}
+                  </h2>
+                  <div class="space-y-4">
+                    {group.talks.map((talk) => (
+                      <TalkCard talk={talk} />
+                    ))}
+                  </div>
+                </section>
+              ))
+            )}
+          </div>
+        </>
+      )
+    }
+  </div>
+</PublicLayout>

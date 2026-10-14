@@ -1,0 +1,67 @@
+---
+import SimpleLayout from '../../layouts/SimpleLayout.astro';
+import VerifyResult from '../../components/certificates/VerifyResult.astro';
+import { verify } from '../../lib/api/certificates';
+import { ApiError } from '../../lib/utils';
+import { messageFor } from '../../lib/errorMessages';
+
+const code = (Astro.url.searchParams.get('code') ?? '').trim();
+
+let result = null;
+let error: string | null = null;
+
+if (code) {
+  try {
+    result = await verify(code);
+  } catch (err) {
+    if (err instanceof ApiError) {
+      error =
+        err.status === 404
+          ? 'No existe ninguna constancia con ese código.'
+          : messageFor(err.code, err.message);
+    } else {
+      error = 'No se pudo verificar la constancia.';
+    }
+  }
+}
+
+const fieldClass =
+  'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm uppercase tracking-wide text-slate-900 placeholder:normal-case placeholder:tracking-normal placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500';
+---
+
+<SimpleLayout
+  title="Verificar constancia"
+  description="Verificación pública de constancias del Congreso 2026."
+>
+  <div class="py-8">
+    <h1 class="text-2xl font-bold text-slate-900">Verificación de constancia</h1>
+    <p class="mt-2 text-sm text-slate-500">
+      Ingresa el código que aparece en la constancia para comprobar su autenticidad.
+    </p>
+
+    <form method="get" action="/verificar/" class="mt-6 flex flex-col gap-3 sm:flex-row">
+      <label class="sr-only" for="code">Código de constancia</label>
+      <input
+        type="text"
+        id="code"
+        name="code"
+        value={code}
+        required
+        placeholder="Ej. CNG-2026-0001"
+        class={fieldClass}
+      />
+      <button
+        type="submit"
+        class="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+      >
+        Verificar
+      </button>
+    </form>
+
+    {code && <div class="mt-6"><VerifyResult result={result} error={error} code={code} /></div>}
+
+    <p class="mt-8 text-sm text-slate-500">
+      <a href="/" class="font-medium text-blue-600 hover:text-blue-700">Volver al inicio</a>
+    </p>
+  </div>
+</SimpleLayout>

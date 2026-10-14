@@ -1,0 +1,79 @@
+---
+import type { Location } from '../../lib/types';
+import { formatDayLabel } from '../../lib/utils';
+
+interface Props {
+  /** Fechas disponibles (`AAAA-MM-DD`) derivadas de las ponencias. */
+  dates: string[];
+  locations: Location[];
+  current: {
+    date?: string;
+    location?: string;
+    q?: string;
+  };
+}
+
+const { dates, locations, current } = Astro.props;
+
+const fieldClass =
+  'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500';
+const labelClass = 'mb-1 block text-sm font-medium text-slate-700';
+---
+
+<form method="get" class="flex flex-col gap-4 sm:flex-row sm:items-end">
+  <div class="flex-1">
+    <label for="q" class={labelClass}>Buscar</label>
+    <input
+      type="search"
+      id="q"
+      name="q"
+      value={current.q ?? ''}
+      placeholder="Título o ponente…"
+      class={fieldClass}
+    />
+  </div>
+  <div>
+    <label for="date" class={labelClass}>Día</label>
+    <select id="date" name="date" class={fieldClass}>
+      <option value="">Todos los días</option>
+      {
+        dates.map((d) => (
+          <option value={d} selected={d === current.date}>
+            {formatDayLabel(d)}
+          </option>
+        ))
+      }
+    </select>
+  </div>
+  <div>
+    <label for="location" class={labelClass}>Ubicación</label>
+    <select id="location" name="location" class={fieldClass}>
+      <option value="">Todas</option>
+      {
+        locations.map((loc) => (
+          <option value={String(loc.id)} selected={String(loc.id) === current.location}>
+            {loc.name}
+          </option>
+        ))
+      }
+    </select>
+  </div>
+  <div class="flex gap-2">
+    <button
+      type="submit"
+      class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+    >
+      Filtrar
+    </button>
+    {
+      (current.date || current.location || current.q) && (
+        <a
+          href="/agenda"
+          class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+        >
+          Limpiar
+        </a>
+      )
+    }
+  </div>
+</form>

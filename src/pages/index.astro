@@ -1,8 +1,40 @@
 ---
 import PublicLayout from '../layouts/PublicLayout.astro';
+import TalkCard from '../components/talks/TalkCard.astro';
+import SpeakerCard from '../components/speakers/SpeakerCard.astro';
 import { ROUTES } from '../lib/constants';
+import { list as listTalks } from '../lib/api/talks';
+import { list as listSpeakers } from '../lib/api/speakers';
+import { fetchAllPages } from '../lib/api/helpers';
+import type { Talk, Speaker } from '../lib/types';
 
-// En el Milestone 3 aquí se cargarán agenda y ponentes desde el API.
+// Si el backend no responde, la landing sigue siendo funcional (datos opcionales).
+const [talksResult, speakersResult] = await Promise.allSettled([
+  fetchAllPages(listTalks, {}),
+  fetchAllPages(listSpeakers, {}),
+]);
+
+const talks: Talk[] = talksResult.status === 'fulfilled' ? talksResult.value : [];
+const speakers: Speaker[] = speakersResult.status === 'fulfilled' ? speakersResult.value : [];
+
+const sortBySchedule = (a: Talk, b: Talk) =>
+  a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime);
+
+const today = new Date();
+const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+const upcoming = [...talks]
+  .filter((t) => t.status === 'scheduled' && t.date >= todayIso)
+  .sort(sortBySchedule)
+  .slice(0, 3);
+const upcomingPreview = upcoming.length > 0 ? upcoming : [...talks].sort(sortBySchedule).slice(0, 3);
+
+const speakerPreview = [...speakers]
+  .sort((a, b) => Number(Boolean(b.photoUrl)) - Number(Boolean(a.photoUrl)))
+  .slice(0, 4);
+
+const days = new Set(talks.map((t) => t.date)).size;
+
 const user = Astro.locals.user;
 ---
 
@@ -23,6 +55,28 @@ const user = Astro.locals.user;
         Encuentro de investigación y tecnología. Revisa la agenda, conoce a los ponentes y
         regístrate para asistir a las conferencias.
       </p>
+
+      {
+        talks.length > 0 && (
+          <div class="mx-auto mt-10 flex max-w-2xl justify-center divide-x divide-blue-400/60 rounded-xl border border-blue-400/40 bg-blue-800/40 backdrop-blur">
+            <div class="flex-1 px-4 py-4">
+              <p class="text-2xl font-bold">{talks.length}</p>
+              <p class="mt-0.5 text-xs uppercase tracking-wide text-blue-200">Ponencias</p>
+            </div>
+            <div class="flex-1 px-4 py-4">
+              <p class="text-2xl font-bold">{speakers.length}</p>
+              <p class="mt-0.5 text-xs uppercase tracking-wide text-blue-200">Ponentes</p>
+            </div>
+            <div class="flex-1 px-4 py-4">
+              <p class="text-2xl font-bold">{days || '—'}</p>
+              <p class="mt-0.5 text-xs uppercase tracking-wide text-blue-200">
+                {days === 1 ? 'Día' : 'Días'}
+              </p>
+            </div>
+          </div>
+        )
+      }
+
       <div class="mt-10 flex flex-wrap items-center justify-center gap-4">
         <a
           href={user ? ROUTES.app : ROUTES.register}
@@ -39,6 +93,60 @@ const user = Astro.locals.user;
       </div>
     </div>
   </section>
+
+  <!-- Próximas ponencias -->
+  {
+    upcomingPreview.length > 0 && (
+      <section class="mx-auto max-w-7xl px-4 py-14 sm:px-6">
+        <div class="mb-6 flex items-end justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-900">Ponencias destacadas</h2>
+            <p class="mt-1 text-sm text-slate-500">Una selección del programa de esta edición.</p>
+          </div>
+          <a
+            href={ROUTES.agenda}
+            class="text-sm font-semibold text-blue-600 hover:text-blue-700"
+          >
+            Ver agenda completa →
+          </a>
+        </div>
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {upcomingPreview.map((talk) => (
+            <TalkCard talk={talk} showDate={true} />
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Ponentes -->
+  {
+    speakerPreview.length > 0 && (
+      <section class="bg-white">
+        <div class="mx-auto max-w-7xl px-4 py-14 sm:px-6">
+          <div class="mb-6 flex items-end justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900">Ponentes</h2>
+              <p class="mt-1 text-sm text-slate-500">
+                Conoce a los especialistas de esta edición.
+              </p>
+            </div>
+            <a
+              href={ROUTES.ponentes}
+              class="text-sm font-semibold text-blue-600 hover:text-blue-700"
+            >
+              Ver todos →
+            </a>
+          </div>
+          <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {speakerPreview.map((speaker) => (
+              <SpeakerCard speaker={speaker} />
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   <!-- Secciones rápidas -->
   <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6">
@@ -62,12 +170,12 @@ const user = Astro.locals.user;
         </p>
       </a>
       <a
-        href={ROUTES.register}
+        href="/verificar/"
         class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
       >
-        <h2 class="text-lg font-semibold text-slate-900">Registro</h2>
+        <h2 class="text-lg font-semibold text-slate-900">Verificar constancia</h2>
         <p class="mt-2 text-sm text-slate-500">
-          Crea tu cuenta para inscribirte, registrar asistencia y descargar constancias.
+          Comprueba la autenticidad de una constancia por su código.
         </p>
       </a>
     </div>

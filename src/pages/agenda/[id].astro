@@ -1,0 +1,176 @@
+---
+import PublicLayout from '../../layouts/PublicLayout.astro';
+import Badge from '../../components/ui/Badge';
+import ErrorState from '../../components/ui/ErrorState';
+import { getById } from '../../lib/api/talks';
+import { publicUrl } from '../../lib/api/client';
+import { ApiError, formatDateLong, formatDuration } from '../../lib/utils';
+import { messageFor } from '../../lib/errorMessages';
+
+const id = Number(Astro.params.id);
+const user = Astro.locals.user;
+
+let talk = null;
+let error: string | null = null;
+let errorCode: string | undefined;
+
+if (!Number.isInteger(id) || id <= 0) {
+  error = 'La ponencia no existe.';
+  errorCode = 'TALK_NOT_FOUND';
+} else {
+  try {
+    talk = await getById(id);
+  } catch (err) {
+    if (err instanceof ApiError) {
+      error = messageFor(err.code, err.message);
+      errorCode = err.code;
+      if (err.status === 404) Astro.response.status = 404;
+    } else {
+      error = 'No se pudo cargar la ponencia.';
+      Astro.response.status = 502;
+    }
+  }
+}
+
+const location = talk?.location;
+const locationFull = location
+  ? [location.name, location.building, location.address].filter(Boolean).join(' · ')
+  : 'Ubicación por definir';
+---
+
+<PublicLayout
+  title={talk ? `${talk.title} · Agenda` : 'Ponencia'}
+  description={talk?.description ?? 'Detalle de ponencia del Congreso 2026.'}
+>
+  <div class="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:py-14">
+    <a
+      href="/agenda"
+      class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900"
+    >
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width={2} aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+      </svg>
+      Volver a la agenda
+    </a>
+
+    {
+      error || !talk ? (
+        <div class="mt-8">
+          <ErrorState
+            title="Ponencia no encontrada"
+            description={error ?? 'La ponencia que buscas no existe.'}
+            code={errorCode}
+          />
+        </div>
+      ) : (
+        <article class="mt-6">
+          <header>
+            <div class="flex flex-wrap items-center gap-3">
+              <Badge variant={talk.status === 'scheduled' ? 'green' : 'red'}>
+                {talk.status === 'scheduled' ? 'Programada' : 'Cancelada'}
+              </Badge>
+              <span class="text-sm font-semibold text-blue-600">
+                {talk.startTime} – {talk.endTime}
+              </span>
+              <span class="text-sm text-slate-500">{formatDuration(talk.durationMinutes)}</span>
+            </div>
+            <h1 class="mt-3 text-3xl font-bold text-slate-900">{talk.title}</h1>
+            <p class="mt-3 flex items-center gap-2 text-slate-600">
+              <svg class="h-5 w-5 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width={1.5} aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+              </svg>
+              {formatDateLong(talk.date)}
+            </p>
+            <p class="mt-1 flex items-center gap-2 text-slate-600">
+              <svg class="h-5 w-5 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width={1.5} aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+              </svg>
+              {locationFull}
+            </p>
+          </header>
+
+          {talk.description && (
+            <div class="prose-sm mt-8 max-w-none whitespace-pre-line text-slate-700">
+              {talk.description}
+            </div>
+          )}
+
+          <section class="mt-10">
+            <h2 class="text-lg font-semibold text-slate-900">Ponentes</h2>
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+              {talk.speakers.map((speaker) => {
+                const photo = publicUrl(speaker.photoUrl);
+                return (
+                  <a
+                    href={`/ponentes/${speaker.id}`}
+                    class="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 transition-shadow hover:shadow-md"
+                  >
+                    {photo ? (
+                      <img
+                        src={photo}
+                        alt={`Fotografía de ${speaker.name}`}
+                        class="h-16 w-16 shrink-0 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div class="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-blue-50 text-lg font-bold text-blue-400">
+                        {speaker.name
+                          .split(' ')
+                          .slice(0, 2)
+                          .map((p) => p[0])
+                          .join('')}
+                      </div>
+                    )}
+                    <div class="min-w-0">
+                      <p class="truncate font-semibold text-slate-900">{speaker.name}</p>
+                      {speaker.academicDegree && (
+                        <p class="truncate text-sm text-slate-500">{speaker.academicDegree}</p>
+                      )}
+                      {speaker.institution && (
+                        <p class="truncate text-sm text-slate-500">{speaker.institution}</p>
+                      )}
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          </section>
+
+          <section class="mt-10 rounded-xl border border-blue-100 bg-blue-50 p-5">
+            <h2 class="font-semibold text-blue-900">¿Vas a asistir?</h2>
+            <p class="mt-1 text-sm text-blue-800">
+              {user
+                ? 'Inscríbete y registra tu asistencia desde tu panel. Las inscripciones y el check-in se gestionan en "Mis ponencias".'
+                : 'Inicia sesión o crea una cuenta para inscribirte y registrar tu asistencia.'}
+            </p>
+            <div class="mt-4 flex flex-wrap gap-3">
+              {user ? (
+                <a
+                  href="/app/mis-ponencias"
+                  class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                >
+                  Ir a mis ponencias
+                </a>
+              ) : (
+                <>
+                  <a
+                    href={`/auth/login?redirect=${encodeURIComponent(`/agenda/${talk.id}`)}`}
+                    class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                  >
+                    Iniciar sesión
+                  </a>
+                  <a
+                    href="/auth/register"
+                    class="rounded-lg border border-blue-300 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100"
+                  >
+                    Crear cuenta
+                  </a>
+                </>
+              )}
+            </div>
+          </section>
+        </article>
+      )
+    }
+  </div>
+</PublicLayout>

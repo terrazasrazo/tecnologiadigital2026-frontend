@@ -1,0 +1,127 @@
+---
+import PublicLayout from '../../layouts/PublicLayout.astro';
+import TalkCard from '../../components/talks/TalkCard.astro';
+import ErrorState from '../../components/ui/ErrorState';
+import EmptyState from '../../components/ui/EmptyState';
+import { getById } from '../../lib/api/speakers';
+import { list as listTalks } from '../../lib/api/talks';
+import { fetchAllPages } from '../../lib/api/helpers';
+import { publicUrl } from '../../lib/api/client';
+import { ApiError } from '../../lib/utils';
+import { messageFor } from '../../lib/errorMessages';
+
+const id = Number(Astro.params.id);
+
+let speaker = null;
+let talks: Awaited<ReturnType<typeof listTalks>>['data'] = [];
+let error: string | null = null;
+let errorCode: string | undefined;
+
+if (!Number.isInteger(id) || id <= 0) {
+  error = 'El ponente no existe.';
+  errorCode = 'SPEAKER_NOT_FOUND';
+} else {
+  try {
+    speaker = await getById(id);
+    // La API no filtra ponencias por ponente: se traen todas y se cruzan.
+    const allTalks = await fetchAllPages(listTalks, {});
+    talks = allTalks
+      .filter((t) => t.speakers.some((s) => s.id === id))
+      .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+  } catch (err) {
+    if (err instanceof ApiError) {
+      error = messageFor(err.code, err.message);
+      errorCode = err.code;
+      if (err.status === 404) Astro.response.status = 404;
+    } else {
+      error = 'No se pudo cargar el ponente.';
+      Astro.response.status = 502;
+    }
+  }
+}
+
+const photo = publicUrl(speaker?.photoUrl ?? null);
+const initials = speaker
+  ? speaker.name
+      .split(' ')
+      .slice(0, 2)
+      .map((p) => p[0])
+      .join('')
+      .toUpperCase()
+  : '';
+---
+
+<PublicLayout
+  title={speaker ? `${speaker.name} · Ponentes` : 'Ponente'}
+  description={speaker?.bio?.slice(0, 150) ?? 'Perfil de ponente del Congreso 2026.'}
+>
+  <div class="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:py-14">
+    <a
+      href="/ponentes"
+      class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900"
+    >
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width={2} aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+      </svg>
+      Volver a ponentes
+    </a>
+
+    {
+      error || !speaker ? (
+        <div class="mt-8">
+          <ErrorState
+            title="Ponente no encontrado"
+            description={error ?? 'El ponente que buscas no existe.'}
+            code={errorCode}
+          />
+        </div>
+      ) : (
+        <article class="mt-6">
+          <header class="flex flex-col gap-6 sm:flex-row sm:items-start">
+            {photo ? (
+              <img
+                src={photo}
+                alt={`Fotografía de ${speaker.name}`}
+                class="h-40 w-40 shrink-0 rounded-2xl object-cover"
+              />
+            ) : (
+              <div class="grid h-40 w-40 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 text-4xl font-bold text-blue-400">
+                {initials}
+              </div>
+            )}
+            <div>
+              {speaker.academicDegree && (
+                <p class="text-sm font-semibold uppercase tracking-wide text-blue-600">
+                  {speaker.academicDegree}
+                </p>
+              )}
+              <h1 class="mt-1 text-3xl font-bold text-slate-900">{speaker.name}</h1>
+              {speaker.institution && <p class="mt-1 text-slate-600">{speaker.institution}</p>}
+              {speaker.bio && (
+                <div class="mt-4 whitespace-pre-line leading-relaxed text-slate-700">
+                  {speaker.bio}
+                </div>
+              )}
+            </div>
+          </header>
+
+          <section class="mt-10">
+            <h2 class="text-lg font-semibold text-slate-900">
+              Ponencias de {speaker.name.split(' ')[0]}
+            </h2>
+            <div class="mt-4 space-y-4">
+              {talks.length === 0 ? (
+                <EmptyState
+                  title="Sin ponencias asignadas"
+                  description="Este aún no tiene ponencias en la agenda."
+                />
+              ) : (
+                talks.map((talk) => <TalkCard talk={talk} showDate={true} />)
+              )}
+            </div>
+          </section>
+        </article>
+      )
+    }
+  </div>
+</PublicLayout>

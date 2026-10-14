@@ -118,3 +118,14 @@ export async function apiRaw(path: string, opts: RequestOptions = {}): Promise<R
 export function healthPath(): string {
   return API_PREFIX === '/api' ? '/health' : '/health';
 }
+
+/**
+ * Convierte rutas públicas del backend (fotografías de ponentes, etc.) en URLs
+ * absolutas. El backend devuelve rutas tipo `/uploads/ponentes/x.jpg`, que el
+ * navegador no puede resolver contra el origen del frontend.
+ */
+export function publicUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  if (/^https?:\/\//.test(path)) return path;
+  return apiUrl(BASE_URL, path);
+}

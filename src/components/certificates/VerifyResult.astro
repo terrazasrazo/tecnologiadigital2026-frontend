@@ -1,0 +1,62 @@
+---
+import { formatDate } from '../../lib/utils';
+import type { CertificateVerify } from '../../lib/types';
+
+interface Props {
+  /** Resultado de la verificación; null si hubo error. */
+  result: CertificateVerify | null;
+  error: string | null;
+  /** Código consultado (para mostrarlo en el resultado negativo). */
+  code: string;
+}
+
+const { result, error, code } = Astro.props;
+---
+
+{
+  result ? (
+    <div class="overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
+      <div class="flex items-center gap-3 bg-emerald-50 px-6 py-4">
+        <span class="grid h-10 w-10 place-items-center rounded-full bg-emerald-600 text-white">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width={2.5} aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          </svg>
+        </span>
+        <div>
+          <p class="font-semibold text-emerald-900">Constancia válida</p>
+          <p class="text-sm text-emerald-700">Este documento fue emitido por el Congreso 2026.</p>
+        </div>
+      </div>
+      <dl class="divide-y divide-slate-100 px-6">
+        <div class="flex justify-between gap-4 py-3">
+          <dt class="text-sm text-slate-500">Titular</dt>
+          <dd class="text-sm font-semibold text-slate-900">{result.holder}</dd>
+        </div>
+        <div class="flex justify-between gap-4 py-3">
+          <dt class="text-sm text-slate-500">Código</dt>
+          <dd class="font-mono text-sm text-slate-900">{result.code}</dd>
+        </div>
+        <div class="flex justify-between gap-4 py-3">
+          <dt class="text-sm text-slate-500">Ponencias asistidas</dt>
+          <dd class="text-sm font-semibold text-slate-900">{result.talksCount}</dd>
+        </div>
+        <div class="flex justify-between gap-4 py-3">
+          <dt class="text-sm text-slate-500">Horas acumuladas</dt>
+          <dd class="text-sm font-semibold text-slate-900">{result.hoursTotal} h</dd>
+        </div>
+        <div class="flex justify-between gap-4 py-3">
+          <dt class="text-sm text-slate-500">Emitida el</dt>
+          <dd class="text-sm font-semibold text-slate-900">{formatDate(result.issuedAt)}</dd>
+        </div>
+      </dl>
+    </div>
+  ) : (
+    <div class="rounded-2xl border border-red-200 bg-red-50 px-6 py-5">
+      <p class="font-semibold text-red-800">Constancia no válida</p>
+      <p class="mt-1 text-sm text-red-700">{error}</p>
+      <p class="mt-3 text-xs text-red-500">
+        Código consultado: <span class="font-mono">{code || '(sin código)'}</span>
+      </p>
+    </div>
+  )
+}

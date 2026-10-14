@@ -1,0 +1,54 @@
+---
+import type { Speaker } from '../../lib/types';
+import { publicUrl } from '../../lib/api/client';
+
+interface Props {
+  speaker: Speaker;
+}
+
+const { speaker } = Astro.props;
+const photo = publicUrl(speaker.photoUrl);
+const initials = speaker.name
+  .split(' ')
+  .slice(0, 2)
+  .map((part) => part[0])
+  .join('')
+  .toUpperCase();
+---
+
+<a
+  href={`/ponentes/${speaker.id}`}
+  class="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md"
+>
+  {
+    photo ? (
+      <img
+        src={photo}
+        alt={`Fotografía de ${speaker.name}`}
+        loading="lazy"
+        class="h-44 w-full object-cover"
+      />
+    ) : (
+      <div class="flex h-44 w-full items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 text-3xl font-bold text-blue-400">
+        {initials}
+      </div>
+    )
+  }
+  <div class="flex flex-1 flex-col p-4">
+    {
+      speaker.academicDegree && (
+        <p class="text-xs font-semibold uppercase tracking-wide text-blue-600">
+          {speaker.academicDegree}
+        </p>
+      )
+    }
+    <h3 class="mt-1 text-base font-semibold text-slate-900 group-hover:text-blue-700">
+      {speaker.name}
+    </h3>
+    {
+      speaker.institution && (
+        <p class="mt-1 text-sm text-slate-500">{speaker.institution}</p>
+      )
+    }
+  </div>
+</a>
