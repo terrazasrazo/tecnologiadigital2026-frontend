@@ -1,31 +1,7 @@
 import { useState } from 'react';
 import Button from '../ui/Button';
-import { ClientApiError, postJson } from '../../lib/api/browser';
+import { ClientApiError, deleteJson, postJson } from '../../lib/api/browser';
 import { messageFor } from '../../lib/errorMessages';
-
-/** Borra una URL vía DELETE (mismo patrón que postJson). */
-async function deleteJson(url: string): Promise<unknown> {
-  let res: Response;
-  try {
-    res = await fetch(url, { method: 'DELETE', credentials: 'same-origin' });
-  } catch {
-    throw new ClientApiError(0, 'NETWORK_ERROR', 'No se pudo conectar con el servidor.');
-  }
-  const text = await res.text();
-  let data: unknown = null;
-  if (text) {
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = null;
-    }
-  }
-  if (!res.ok) {
-    const err = (data as { error?: { code?: string; message?: string } } | null)?.error;
-    throw new ClientApiError(res.status, err?.code ?? 'UNKNOWN', err?.message ?? 'Error', undefined);
-  }
-  return data;
-}
 
 interface Props {
   talkId: number;

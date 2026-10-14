@@ -1,17 +1,21 @@
-import type { ReactNode } from 'react';
-
 interface EmptyStateProps {
   title?: string;
   description?: string;
-  /** Acción opcional (botón o enlace). */
-  action?: ReactNode;
+  /**
+   * Acción opcional. Se pasa como URL + etiqueta (y no como nodo JSX) porque
+   * los elementos escritos dentro de expresiones de un archivo `.astro` llegan
+   * a los componentes React como objetos de render y provocan un error.
+   */
+  actionHref?: string;
+  actionLabel?: string;
 }
 
 /** Mensaje para listas sin resultados. */
 export default function EmptyState({
   title = 'No hay nada por aquí',
   description,
-  action,
+  actionHref,
+  actionLabel,
 }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
@@ -26,7 +30,16 @@ export default function EmptyState({
       </div>
       <h3 className="mt-4 text-sm font-semibold text-slate-900">{title}</h3>
       {description && <p className="mt-1 max-w-sm text-sm text-slate-500">{description}</p>}
-      {action && <div className="mt-4">{action}</div>}
+      {actionHref && actionLabel && (
+        <div className="mt-4">
+          <a
+            href={actionHref}
+            className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+          >
+            {actionLabel}
+          </a>
+        </div>
+      )}
     </div>
   );
 }

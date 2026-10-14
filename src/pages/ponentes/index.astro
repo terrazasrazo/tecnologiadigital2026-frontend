@@ -71,16 +71,8 @@ const fieldClass =
         <EmptyState
           title={q ? 'Sin resultados' : 'Aún no hay ponentes registrados'}
           description={q ? 'Prueba con otro nombre o institución.' : 'Vuelve pronto, la lista se está actualizando.'}
-          action={
-            q ? (
-              <a
-                href="/ponentes"
-                class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-              >
-                Ver todos
-              </a>
-            ) : undefined
-          }
+          actionHref={q ? '/ponentes' : undefined}
+          actionLabel={q ? 'Ver todos' : undefined}
         />
       ) : (
         <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

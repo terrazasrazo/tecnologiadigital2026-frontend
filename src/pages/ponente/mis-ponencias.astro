@@ -1,0 +1,87 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import RegistrationCard from '../../components/talks/RegistrationCard.astro';
+import EmptyState from '../../components/ui/EmptyState';
+import ErrorState from '../../components/ui/ErrorState';
+import { list as listSpeakers } from '../../lib/api/speakers';
+import { list as listTalks } from '../../lib/api/talks';
+import { fetchAllPages } from '../../lib/api/helpers';
+import { ApiError } from '../../lib/utils';
+import { messageFor } from '../../lib/errorMessages';
+import type { Talk } from '../../lib/types';
+
+const user = Astro.locals.user!;
+
+let assigned: Talk[] = [];
+let hasSpeakerProfile = false;
+let loadError: string | null = null;
+
+const [speakersResult, talksResult] = await Promise.allSettled([
+  fetchAllPages(listSpeakers, {}),
+  fetchAllPages(listTalks, {}),
+]);
+
+if (speakersResult.status === 'fulfilled') {
+  const mine = speakersResult.value.find((s) => s.userId === user.id);
+  hasSpeakerProfile = Boolean(mine);
+  if (mine && talksResult.status === 'fulfilled') {
+    assigned = talksResult.value
+      .filter((t) => t.speakers?.some((s) => s.id === mine.id))
+      .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+  }
+} else {
+  const err = speakersResult.reason;
+  loadError =
+    err instanceof ApiError ? messageFor(err.code, err.message) : 'No se pudieron cargar tus ponencias.';
+}
+
+if (!loadError && talksResult.status === 'rejected' && hasSpeakerProfile) {
+  const err = talksResult.reason;
+  loadError =
+    err instanceof ApiError ? messageFor(err.code, err.message) : 'No se pudieron cargar tus ponencias.';
+}
+---
+
+<DashboardLayout title="Mis ponencias">
+  {
+    loadError ? (
+      <ErrorState title="No se pudieron cargar tus ponencias" description={loadError} />
+    ) : !hasSpeakerProfile ? (
+      <EmptyState
+        title="Aún no tienes perfil de ponente"
+        description="En cuanto el organizador vincule tu cuenta a un perfil de ponente, aquí aparecerán las ponencias que tengas asignadas."
+        actionHref="/ponente/perfil"
+        actionLabel="Ir a mi perfil"
+      />
+    ) : assigned.length === 0 ? (
+      <EmptyState
+        title="No tienes ponencias asignadas"
+        description="Cuando el organizador te asigne a una ponencia, aparecerá aquí con su fecha, horario y ubicación."
+      />
+    ) : (
+      <>
+        <div class="mb-4 max-w-2xl">
+          <p class="text-sm text-slate-500">
+            Ponencias en las que participas como ponente ({assigned.length}). La información es de
+            solo lectura: cualquier cambio lo realiza el organizador.
+          </p>
+        </div>
+        <div class="space-y-4">
+          {assigned.map((talk) => (
+            <RegistrationCard
+              talk={{
+                id: talk.id,
+                title: talk.title,
+                date: talk.date,
+                startTime: talk.startTime,
+                endTime: talk.endTime,
+                locationName: talk.location?.name,
+              }}
+              talkCancelled={talk.status === 'cancelled'}
+            />
+          ))}
+        </div>
+      </>
+    )
+  }
+</DashboardLayout>

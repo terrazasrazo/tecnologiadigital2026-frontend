@@ -3,6 +3,7 @@ import type { RegistrationStatus } from '../../lib/types';
 import { formatDayLabel } from '../../lib/utils';
 import RegistrationStatusBadge from '../attendance/RegistrationStatus';
 import AttendanceButton from '../attendance/AttendanceButton';
+import Badge from '../ui/Badge';
 
 interface TalkInfo {
   id: number;
@@ -47,6 +48,7 @@ const { talk, status, action, talkCancelled = false } = Astro.props;
       }
     </div>
     {status && <RegistrationStatusBadge status={status} />}
+    {!status && talkCancelled && <Badge variant="red">Ponencia cancelada</Badge>}
   </div>
 
   {

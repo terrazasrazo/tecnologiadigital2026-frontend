@@ -85,14 +85,8 @@ for (const talk of filtered) {
               <EmptyState
                 title="No hay ponencias con esos filtros"
                 description="Prueba con otro día, otra ubicación o borra la búsqueda."
-                action={
-                  <a
-                    href="/agenda"
-                    class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                  >
-                    Ver toda la agenda
-                  </a>
-                }
+                actionHref="/agenda"
+                actionLabel="Ver toda la agenda"
               />
             ) : (
               groups.map((group) => (

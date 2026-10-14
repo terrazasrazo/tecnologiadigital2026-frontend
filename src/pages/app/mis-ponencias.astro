@@ -58,14 +58,8 @@ const disponibles = talks
               <EmptyState
                 title="Aún no te has inscrito"
                 description="Inscríbete en las ponencias que te interesen desde la lista siguiente o desde la agenda."
-                action={
-                  <a
-                    href="/agenda"
-                    class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                  >
-                    Ver agenda
-                  </a>
-                }
+                actionHref="/agenda"
+                actionLabel="Ver agenda"
               />
             ) : (
               misInscripciones.map((reg) => (

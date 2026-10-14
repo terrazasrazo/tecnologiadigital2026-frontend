@@ -37,6 +37,9 @@ const MESSAGES: Record<string, string> = {
   NOT_ELIGIBLE: 'Aún no cumples los requisitos para la constancia.',
   TALK_TIME_CONFLICT: 'La horaria se solapa con otra ponencia.',
   EMAIL_IN_USE_DUP: 'Ese correo ya está registrado.',
+  INVALID_FILE_TYPE: 'Formato de imagen no permitido (usa JPG, PNG o WEBP).',
+  LIMIT_FILE_SIZE: 'La imagen no puede superar 5 MB.',
+  SPEAKER_ALREADY_LINKED: 'Esa cuenta ya tiene un perfil de ponente vinculado.',
 
   // Infraestructura
   NETWORK_ERROR: 'No se pudo conectar con el servidor del evento.',

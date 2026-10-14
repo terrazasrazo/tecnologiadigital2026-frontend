@@ -1,6 +1,7 @@
 /**
  * Fetch del lado del navegador para los endpoints propios de Astro
- * (`/api/session`, `/api/auth/*`). El backend nunca se llama desde el cliente.
+ * (`/api/session`, `/api/auth/*`, proxies autenticados). El backend nunca se
+ * llama desde el cliente.
  */
 
 export class ClientApiError extends Error {
@@ -17,16 +18,11 @@ export class ClientApiError extends Error {
   }
 }
 
-/** POST JSON a un endpoint de Astro. Lanza `ClientApiError` ante fallos. */
-export async function postJson<T = unknown>(url: string, body?: unknown): Promise<T> {
+/** Núcleo común: fetch + parseo de JSON + traducción de errores a ClientApiError. */
+async function requestJson<T>(url: string, init: RequestInit): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(url, {
-      method: 'POST',
-      headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-      credentials: 'same-origin',
-    });
+    res = await fetch(url, { credentials: 'same-origin', ...init });
   } catch {
     throw new ClientApiError(0, 'NETWORK_ERROR', 'No se pudo conectar con el servidor.');
   }
@@ -53,4 +49,30 @@ export async function postJson<T = unknown>(url: string, body?: unknown): Promis
   }
 
   return data as T;
+}
+
+/** POST JSON a un endpoint de Astro. Lanza `ClientApiError` ante fallos. */
+export async function postJson<T = unknown>(url: string, body?: unknown): Promise<T> {
+  return requestJson<T>(url, {
+    method: 'POST',
+    headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+}
+
+/** DELETE a un endpoint de Astro. Lanza `ClientApiError` ante fallos. */
+export async function deleteJson<T = unknown>(url: string): Promise<T> {
+  return requestJson<T>(url, { method: 'DELETE' });
+}
+
+/**
+ * Envía `multipart/form-data` (p. ej. con archivos). El navegador añade el
+ * `Content-Type` con el boundary automáticamente.
+ */
+export async function sendForm<T = unknown>(
+  url: string,
+  method: 'POST' | 'PATCH' | 'PUT',
+  formData: FormData,
+): Promise<T> {
+  return requestJson<T>(url, { method, body: formData });
 }

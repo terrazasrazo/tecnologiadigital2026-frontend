@@ -1,0 +1,79 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import SpeakerCard from '../../components/speakers/SpeakerCard.astro';
+import SpeakerForm from '../../components/speakers/SpeakerForm';
+import PhotoUpload from '../../components/speakers/PhotoUpload';
+import Card from '../../components/ui/Card';
+import EmptyState from '../../components/ui/EmptyState';
+import ErrorState from '../../components/ui/ErrorState';
+import { list as listSpeakers } from '../../lib/api/speakers';
+import { fetchAllPages } from '../../lib/api/helpers';
+import { publicUrl } from '../../lib/api/client';
+import { ApiError } from '../../lib/utils';
+import { messageFor } from '../../lib/errorMessages';
+import type { Speaker } from '../../lib/types';
+
+const user = Astro.locals.user!;
+
+// El API no filtra ponentes por userId: se busca el vínculo en el listado.
+let speaker: Speaker | null = null;
+let loadError: string | null = null;
+
+try {
+  const all = await fetchAllPages(listSpeakers, {});
+  speaker = all.find((s) => s.userId === user.id) ?? null;
+} catch (err) {
+  loadError =
+    err instanceof ApiError ? messageFor(err.code, err.message) : 'No se pudo cargar tu perfil.';
+}
+---
+
+<DashboardLayout title="Mi perfil de ponente">
+  {
+    loadError ? (
+      <ErrorState title="No se pudo cargar tu perfil" description={loadError} />
+    ) : !speaker ? (
+      <EmptyState
+        title="Aún no tienes perfil de ponente"
+        description="El organizador todavía no ha vinculado tu cuenta a un perfil de ponente publicado. En cuanto lo haga, podrás editar tu semblanza, grado académico, institución y fotografía desde aquí."
+      />
+    ) : (
+      <div class="grid max-w-5xl gap-6 lg:grid-cols-2">
+        <div class="space-y-4">
+          <h2 class="text-sm font-semibold text-slate-900">Vista previa (así te ven el público)</h2>
+          <SpeakerCard speaker={speaker} />
+          <a
+            href={`/ponentes/${speaker.id}`}
+            class="inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
+          >
+            Ver perfil público completo →
+          </a>
+        </div>
+
+        <div class="space-y-6">
+          <Card title="Fotografía">
+            <PhotoUpload
+              client:visible
+              speakerId={speaker.id}
+              name={speaker.name}
+              photo={publicUrl(speaker.photoUrl)}
+            />
+          </Card>
+
+          <Card title="Datos del perfil">
+            <SpeakerForm
+              client:visible
+              speaker={{
+                id: speaker.id,
+                name: speaker.name,
+                academicDegree: speaker.academicDegree,
+                institution: speaker.institution,
+                bio: speaker.bio,
+              }}
+            />
+          </Card>
+        </div>
+      </div>
+    )
+  }
+</DashboardLayout>
