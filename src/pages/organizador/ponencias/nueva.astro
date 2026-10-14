@@ -1,0 +1,38 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import ErrorState from '../../../components/ui/ErrorState';
+import TalkForm from '../../../components/talks/TalkForm';
+import { list as listLocations } from '../../../lib/api/locations';
+import { list as listSpeakers } from '../../../lib/api/speakers';
+import { messageFor } from '../../../lib/errorMessages';
+import { ApiError } from '../../../lib/utils';
+import type { Location, Speaker } from '../../../lib/types';
+
+let locations: Location[] = [];
+let speakers: Speaker[] = [];
+let loadError: string | null = null;
+
+try {
+  const [locationsRes, speakersRes] = await Promise.all([
+    listLocations({ pageSize: 100 }),
+    listSpeakers({ pageSize: 100 }),
+  ]);
+  locations = locationsRes.data;
+  speakers = speakersRes.data;
+} catch (err) {
+  loadError =
+    err instanceof ApiError ? messageFor(err.code, err.message) : 'No se pudo cargar el formulario.';
+}
+---
+
+<DashboardLayout title="Nueva ponencia">
+  <div class="max-w-3xl">
+    {
+      loadError ? (
+        <ErrorState title="No se pudo cargar el formulario" description={loadError} />
+      ) : (
+        <TalkForm client:visible locations={locations} speakers={speakers} />
+      )
+    }
+  </div>
+</DashboardLayout>

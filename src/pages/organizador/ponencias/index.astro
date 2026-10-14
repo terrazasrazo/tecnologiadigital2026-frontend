@@ -1,0 +1,211 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import Pagination from '../../../components/ui/Pagination.astro';
+import EmptyState from '../../../components/ui/EmptyState';
+import ErrorState from '../../../components/ui/ErrorState';
+import ConfirmDeleteButton from '../../../components/ui/ConfirmDeleteButton';
+import Badge from '../../../components/ui/Badge';
+import { list as listTalks } from '../../../lib/api/talks';
+import { list as listLocations } from '../../../lib/api/locations';
+import { ApiError } from '../../../lib/utils';
+import { messageFor } from '../../../lib/errorMessages';
+import { TALK_STATUS_LABELS } from '../../../lib/constants';
+import type { Location, Paginated, Talk, TalkStatus } from '../../../lib/types';
+
+const params = Astro.url.searchParams;
+const q = params.get('q')?.trim() || undefined;
+const dateParam = params.get('date') ?? '';
+const date = /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : undefined;
+const locationIdParam = Number(params.get('locationId'));
+const locationId =
+  Number.isInteger(locationIdParam) && locationIdParam > 0 ? locationIdParam : undefined;
+const statusParam = params.get('status');
+const status: TalkStatus | undefined =
+  statusParam === 'scheduled' || statusParam === 'cancelled' ? statusParam : undefined;
+const page = Math.max(1, Number(params.get('page')) || 1);
+const pageSize = 15;
+
+let talks: Paginated<Talk> | null = null;
+let locations: Location[] = [];
+let loadError: string | null = null;
+
+try {
+  const [talksRes, locationsRes] = await Promise.all([
+    listTalks({ search: q, date, locationId, status, page, pageSize }),
+    listLocations({ pageSize: 100 }),
+  ]);
+  talks = talksRes;
+  locations = locationsRes.data;
+} catch (err) {
+  loadError =
+    err instanceof ApiError ? messageFor(err.code, err.message) : 'No se pudo cargar la lista.';
+}
+
+const hasFilters = Boolean(q || date || locationId || status);
+const query = { q, date, locationId, status };
+---
+
+<DashboardLayout title="Ponencias">
+  <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <form method="GET" class="flex flex-wrap items-end gap-3">
+      <div>
+        <label for="q" class="mb-1 block text-sm font-medium text-slate-700">Buscar</label>
+        <input
+          id="q"
+          type="search"
+          name="q"
+          value={q ?? ''}
+          placeholder="Título…"
+          class="w-52 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label for="date" class="mb-1 block text-sm font-medium text-slate-700">Fecha</label>
+        <input
+          id="date"
+          type="date"
+          name="date"
+          value={date ?? ''}
+          class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label for="locationId" class="mb-1 block text-sm font-medium text-slate-700"
+          >Ubicación</label
+        >
+        <select
+          id="locationId"
+          name="locationId"
+          class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Todas</option>
+          {
+            locations.map((loc) => (
+              <option value={loc.id} selected={loc.id === locationId}>
+                {loc.name}
+              </option>
+            ))
+          }
+        </select>
+      </div>
+      <div>
+        <label for="status" class="mb-1 block text-sm font-medium text-slate-700">Estado</label>
+        <select
+          id="status"
+          name="status"
+          class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Todos</option>
+          <option value="scheduled" selected={status === 'scheduled'}>Programada</option>
+          <option value="cancelled" selected={status === 'cancelled'}>Cancelada</option>
+        </select>
+      </div>
+      <button
+        type="submit"
+        class="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200"
+      >
+        Filtrar
+      </button>
+      {
+        hasFilters && (
+          <a
+            href="/organizador/ponencias"
+            class="pb-2 text-sm font-medium text-blue-600 hover:text-blue-700"
+          >
+            Limpiar
+          </a>
+        )
+      }
+    </form>
+    <a
+      href="/organizador/ponencias/nueva"
+      class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+    >
+      Nueva ponencia
+    </a>
+  </div>
+
+  {
+    loadError ? (
+      <ErrorState title="No se pudieron cargar las ponencias" description={loadError} />
+    ) : !talks || talks.data.length === 0 ? (
+      <EmptyState
+        title={hasFilters ? 'Sin resultados' : 'Aún no hay ponencias'}
+        description={
+          hasFilters
+            ? 'Prueba con otros filtros.'
+            : 'Crea la primera ponencia del congreso para programar sus horarios.'
+        }
+        actionHref={hasFilters ? undefined : '/organizador/ponencias/nueva'}
+        actionLabel={hasFilters ? undefined : 'Nueva ponencia'}
+      />
+    ) : (
+      <>
+        <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+          <table class="min-w-full divide-y divide-slate-100 text-sm">
+            <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <tr>
+                <th class="px-5 py-3">Ponencia</th>
+                <th class="px-5 py-3">Fecha y horario</th>
+                <th class="px-5 py-3">Ubicación</th>
+                <th class="px-5 py-3">Estado</th>
+                <th class="px-5 py-3 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              {talks.data.map((talk) => (
+                <tr>
+                  <td class="px-5 py-3">
+                    <p class="font-medium text-slate-900">{talk.title}</p>
+                    <p class="text-xs text-slate-500">
+                      {talk.speakers.length > 0
+                        ? talk.speakers.map((s) => s.name).join(', ')
+                        : 'Sin ponentes asignados'}
+                    </p>
+                  </td>
+                  <td class="px-5 py-3 text-slate-600">
+                    <p>{talk.date}</p>
+                    <p class="text-xs text-slate-400">
+                      {talk.startTime.slice(0, 5)}–{talk.endTime.slice(0, 5)} ·{' '}
+                      {talk.durationMinutes} min
+                    </p>
+                  </td>
+                  <td class="px-5 py-3 text-slate-500">
+                    {talk.location ? talk.location.name : '—'}
+                  </td>
+                  <td class="px-5 py-3">
+                    <Badge variant={talk.status === 'scheduled' ? 'blue' : 'red'}>
+                      {TALK_STATUS_LABELS[talk.status]}
+                    </Badge>
+                  </td>
+                  <td class="px-5 py-3">
+                    <div class="flex justify-end gap-2">
+                      <a
+                        href={`/organizador/ponencias/${talk.id}/asistencia`}
+                        class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+                      >
+                        Asistencia
+                      </a>
+                      <a
+                        href={`/organizador/ponencias/${talk.id}/editar`}
+                        class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                      >
+                        Editar
+                      </a>
+                      <ConfirmDeleteButton
+                        client:visible
+                        url={`/api/talks/${talk.id}`}
+                        confirmText={`¿Eliminar la ponencia “${talk.title}”?`}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <Pagination meta={talks.meta} basePath="/organizador/ponencias" query={query} />
+      </>
+    )
+  }
+</DashboardLayout>

@@ -1,0 +1,17 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import Card from '../../../components/ui/Card';
+import IssueCertificate from '../../../components/certificates/IssueCertificate';
+---
+
+<DashboardLayout title="Emitir constancia">
+  <div class="max-w-2xl">
+    <Card title="Nueva constancia">
+      <p class="mb-4 text-sm text-slate-500">
+        Busca al asistente por nombre o correo. El backend valida que cumpla el requisito mínimo de
+        ponencias asistidas antes de emitir el PDF.
+      </p>
+      <IssueCertificate client:visible />
+    </Card>
+  </div>
+</DashboardLayout>

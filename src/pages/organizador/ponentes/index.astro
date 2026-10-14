@@ -1,0 +1,149 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import Pagination from '../../../components/ui/Pagination.astro';
+import EmptyState from '../../../components/ui/EmptyState';
+import ErrorState from '../../../components/ui/ErrorState';
+import ConfirmDeleteButton from '../../../components/ui/ConfirmDeleteButton';
+import Badge from '../../../components/ui/Badge';
+import { list as listSpeakers } from '../../../lib/api/speakers';
+import { ApiError } from '../../../lib/utils';
+import { messageFor } from '../../../lib/errorMessages';
+import { publicUrl } from '../../../lib/api/client';
+import type { Paginated, Speaker } from '../../../lib/types';
+
+const accessToken = Astro.locals.accessToken!;
+const params = Astro.url.searchParams;
+const q = params.get('q')?.trim() || undefined;
+const page = Math.max(1, Number(params.get('page')) || 1);
+const pageSize = 15;
+
+let result: Paginated<Speaker> | null = null;
+let loadError: string | null = null;
+
+try {
+  result = await listSpeakers({ search: q, page, pageSize });
+} catch (err) {
+  loadError = err instanceof ApiError ? messageFor(err.code, err.message) : 'No se pudo cargar la lista.';
+}
+
+const initialsOf = (name: string) =>
+  name.split(' ').slice(0, 2).map((p) => p[0]).join('').toUpperCase();
+---
+
+<DashboardLayout title="Ponentes">
+  <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <form method="GET" class="flex flex-wrap items-end gap-3">
+      <div>
+        <label for="q" class="mb-1 block text-sm font-medium text-slate-700">Buscar</label>
+        <input
+          id="q"
+          type="search"
+          name="q"
+          value={q ?? ''}
+          placeholder="Nombre o institución…"
+          class="w-64 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <button
+        type="submit"
+        class="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200"
+      >
+        Buscar
+      </button>
+      {q && (
+        <a href="/organizador/ponentes" class="text-sm font-medium text-blue-600 hover:text-blue-700">
+          Limpiar
+        </a>
+      )}
+    </form>
+    <a
+      href="/organizador/ponentes/nuevo"
+      class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+    >
+      Nuevo ponente
+    </a>
+  </div>
+
+  {
+    loadError ? (
+      <ErrorState title="No se pudieron cargar los ponentes" description={loadError} />
+    ) : !result || result.data.length === 0 ? (
+      <EmptyState
+        title={q ? 'Sin resultados' : 'Aún no hay ponentes'}
+        description={q ? 'Prueba con otro nombre o institución.' : 'Crea el primer ponente del congreso.'}
+        actionHref={q ? undefined : '/organizador/ponentes/nuevo'}
+        actionLabel={q ? undefined : 'Nuevo ponente'}
+      />
+    ) : (
+      <>
+        <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+          <table class="min-w-full divide-y divide-slate-100 text-sm">
+            <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <tr>
+                <th class="px-5 py-3">Ponente</th>
+                <th class="px-5 py-3">Institución</th>
+                <th class="px-5 py-3">Usuario vinculado</th>
+                <th class="px-5 py-3 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              {result.data.map((speaker) => {
+                const photo = publicUrl(speaker.photoUrl);
+                return (
+                  <tr>
+                    <td class="px-5 py-3">
+                      <div class="flex items-center gap-3">
+                        {photo ? (
+                          <img
+                            src={photo}
+                            alt=""
+                            class="h-10 w-10 rounded-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <span class="grid h-10 w-10 place-items-center rounded-full bg-blue-50 text-sm font-bold text-blue-400">
+                            {initialsOf(speaker.name)}
+                          </span>
+                        )}
+                        <div>
+                          <p class="font-medium text-slate-900">{speaker.name}</p>
+                          {speaker.academicDegree && (
+                            <p class="text-xs text-slate-500">{speaker.academicDegree}</p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-5 py-3 text-slate-500">{speaker.institution ?? '—'}</td>
+                    <td class="px-5 py-3">
+                      {speaker.userId ? (
+                        <Badge variant="green">Sí (#{speaker.userId})</Badge>
+                      ) : (
+                        <Badge variant="slate">No</Badge>
+                      )}
+                    </td>
+                    <td class="px-5 py-3">
+                      <div class="flex justify-end gap-2">
+                        <a
+                          href={`/organizador/ponentes/${speaker.id}/editar`}
+                          class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                        >
+                          Editar
+                        </a>
+                        <ConfirmDeleteButton
+                          client:visible
+                          url={`/api/speakers/${speaker.id}`}
+                          confirmText={`¿Eliminar al ponente “${speaker.name}”?`}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <Pagination meta={result.meta} basePath="/organizador/ponentes" query={{ q }} />
+      </>
+    )
+  }
+</DashboardLayout>

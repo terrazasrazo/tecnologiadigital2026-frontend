@@ -126,6 +126,16 @@ export function apiUrl(base: string, path: string): string {
   return `${base.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
 }
 
+/**
+ * Convierte un ISO a valor para `<input type="datetime-local">` (`AAAA-MM-DDTHH:mm`)
+ * usando la zona horaria local.
+ */
+export function toLocalInputValue(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 /** Determina si una cadena es un JSON válido. */
 export function isJson(value: string): boolean {
   try {

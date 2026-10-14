@@ -1,0 +1,46 @@
+---
+import type { Registration } from '../../lib/types';
+import { formatDate } from '../../lib/utils';
+import RegistrationStatusBadge from './RegistrationStatus';
+
+interface Props {
+  registrations: Registration[];
+}
+
+const { registrations } = Astro.props;
+---
+
+<div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+  <table class="min-w-full divide-y divide-slate-100 text-sm">
+    <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+      <tr>
+        <th class="px-5 py-3">Asistente</th>
+        <th class="px-5 py-3">Correo</th>
+        <th class="px-5 py-3">Estado</th>
+        <th class="px-5 py-3">Inscripción</th>
+        <th class="px-5 py-3">Asistencia</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      {
+        registrations.map((reg) => (
+          <tr>
+            <td class="px-5 py-3 font-medium text-slate-900">
+              {reg.user ? `${reg.user.name} ${reg.user.lastName}` : `Usuario #${reg.userId}`}
+            </td>
+            <td class="px-5 py-3 text-slate-500">{reg.user?.email ?? '—'}</td>
+            <td class="px-5 py-3">
+              <RegistrationStatusBadge status={reg.status} />
+            </td>
+            <td class="px-5 py-3 text-slate-500">
+              {reg.registeredAt ? formatDate(reg.registeredAt) : '—'}
+            </td>
+            <td class="px-5 py-3 text-slate-500">
+              {reg.attendedAt ? formatDate(reg.attendedAt) : '—'}
+            </td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>

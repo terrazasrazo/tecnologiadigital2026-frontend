@@ -1,0 +1,97 @@
+---
+import DashboardLayout from '../../../../layouts/DashboardLayout.astro';
+import SpeakerAdminForm from '../../../../components/speakers/SpeakerAdminForm';
+import PhotoUpload from '../../../../components/speakers/PhotoUpload';
+import ConfirmDeleteButton from '../../../../components/ui/ConfirmDeleteButton';
+import Card from '../../../../components/ui/Card';
+import ErrorState from '../../../../components/ui/ErrorState';
+import { getById as getSpeaker } from '../../../../lib/api/speakers';
+import { getById as getUser } from '../../../../lib/api/users';
+import { publicUrl } from '../../../../lib/api/client';
+import { ApiError } from '../../../../lib/utils';
+import { messageFor } from '../../../../lib/errorMessages';
+import type { Speaker, User } from '../../../../lib/types';
+
+const id = Number(Astro.params.id);
+let speaker: Speaker | null = null;
+let linkedUser: User | null = null;
+let loadError: string | null = null;
+
+if (!Number.isInteger(id) || id <= 0) {
+  loadError = 'El ponente no existe.';
+  Astro.response.status = 404;
+} else {
+  try {
+    speaker = await getSpeaker(id);
+    if (speaker.userId) {
+      try {
+        linkedUser = await getUser(Astro.locals.accessToken!, speaker.userId);
+      } catch {
+        // El usuario vinculado pudo haberse eliminado: se muestra el id.
+      }
+    }
+  } catch (err) {
+    if (err instanceof ApiError) {
+      loadError = messageFor(err.code, err.message);
+      if (err.status === 404) Astro.response.status = 404;
+    } else {
+      loadError = 'No se pudo cargar el ponente.';
+    }
+  }
+}
+---
+
+<DashboardLayout title={speaker ? `Editar: ${speaker.name}` : 'Editar ponente'}>
+  {
+    loadError || !speaker ? (
+      <ErrorState title="No se pudo cargar el ponente" description={loadError ?? 'Ponente no encontrado.'} />
+    ) : (
+      <div class="grid max-w-5xl gap-6 lg:grid-cols-2">
+        <div class="space-y-6">
+          <Card title="Datos del perfil">
+            <SpeakerAdminForm
+              client:visible
+              speakerId={speaker.id}
+              initial={{
+                name: speaker.name,
+                academicDegree: speaker.academicDegree,
+                institution: speaker.institution,
+                bio: speaker.bio,
+              }}
+              linkedUser={
+                linkedUser
+                  ? `${linkedUser.name} ${linkedUser.lastName} (${linkedUser.email})`
+                  : speaker.userId
+                    ? `Usuario #${speaker.userId}`
+                    : null
+              }
+            />
+          </Card>
+        </div>
+
+        <div class="space-y-6">
+          <Card title="Fotografía">
+            <PhotoUpload
+              client:visible
+              speakerId={speaker.id}
+              name={speaker.name}
+              photo={publicUrl(speaker.photoUrl)}
+            />
+          </Card>
+          <Card title="Zona de peligro">
+            <p class="mb-3 text-sm text-slate-500">
+              Se elimina el ponente y su fotografía. Las ponencias conservan su historia pero sin
+              el vínculo.
+            </p>
+            <ConfirmDeleteButton
+              client:visible
+              url={`/api/speakers/${speaker.id}`}
+              confirmText={`¿Eliminar definitivamente al ponente “${speaker.name}”?`}
+              redirect="/organizador/ponentes"
+            />
+          </Card>
+        </div>
+      </div>
+    )
+  }
+</DashboardLayout>

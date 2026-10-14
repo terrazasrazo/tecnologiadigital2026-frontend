@@ -1,0 +1,79 @@
+---
+import type { PaginationMeta } from '../../lib/types';
+
+interface Props {
+  meta: PaginationMeta;
+  /** Ruta base para los enlaces, p. ej. `/organizador/ponencias`. */
+  basePath: string;
+  /** Parámetros de filtro que se conservan en cada enlace. */
+  query?: Record<string, string | number | undefined>;
+}
+
+const { meta, basePath, query = {} } = Astro.props;
+const { page, totalPages } = meta;
+
+/** Construye la URL de una página conservando los filtros actuales. */
+function pageUrl(target: number): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined && value !== '') params.set(key, String(value));
+  }
+  if (target > 1) params.set('page', String(target));
+  const qs = params.toString();
+  return qs ? `${basePath}?${qs}` : basePath;
+}
+
+/** Páginas a mostrar: ventana alrededor de la actual. */
+const windowSize = 2;
+const from = Math.max(1, page - windowSize);
+const to = Math.min(totalPages, page + windowSize);
+const pages: number[] = [];
+for (let p = from; p <= to; p += 1) pages.push(p);
+---
+
+{
+  totalPages > 1 && (
+    <nav class="mt-6 flex items-center justify-between gap-2" aria-label="Paginación">
+      <a
+        href={pageUrl(Math.max(1, page - 1))}
+        aria-disabled={page <= 1}
+        class:list={[
+          'rounded-lg border px-3 py-1.5 text-sm font-medium',
+          page <= 1
+            ? 'pointer-events-none border-slate-200 text-slate-300'
+            : 'border-slate-300 text-slate-600 hover:bg-slate-50',
+        ]}
+      >
+        ← Anterior
+      </a>
+
+      <div class="flex items-center gap-1">
+        {pages.map((p) => (
+          <a
+            href={pageUrl(p)}
+            aria-current={p === page ? 'page' : undefined}
+            class:list={[
+              'rounded-lg px-3 py-1.5 text-sm font-medium',
+              p === page ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100',
+            ]}
+          >
+            {p}
+          </a>
+        ))}
+      </div>
+
+      <a
+        href={pageUrl(Math.min(totalPages, page + 1))}
+        aria-disabled={page >= totalPages}
+        class:list={[
+          'rounded-lg border px-3 py-1.5 text-sm font-medium',
+          page >= totalPages
+            ? 'pointer-events-none border-slate-200 text-slate-300'
+            : 'border-slate-300 text-slate-600 hover:bg-slate-50',
+        ]}
+      >
+        Siguiente →
+      </a>
+    </nav>
+  )
+}

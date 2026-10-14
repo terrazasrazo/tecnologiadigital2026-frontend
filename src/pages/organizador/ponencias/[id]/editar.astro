@@ -1,0 +1,75 @@
+---
+import DashboardLayout from '../../../../layouts/DashboardLayout.astro';
+import ErrorState from '../../../../components/ui/ErrorState';
+import TalkForm from '../../../../components/talks/TalkForm';
+import ConfirmDeleteButton from '../../../../components/ui/ConfirmDeleteButton';
+import Card from '../../../../components/ui/Card';
+import { getById as getTalk } from '../../../../lib/api/talks';
+import { list as listLocations } from '../../../../lib/api/locations';
+import { list as listSpeakers } from '../../../../lib/api/speakers';
+import { ApiError } from '../../../../lib/utils';
+import { messageFor } from '../../../../lib/errorMessages';
+import type { Location, Speaker, Talk } from '../../../../lib/types';
+
+const id = Number(Astro.params.id);
+let talk: Talk | null = null;
+let locations: Location[] = [];
+let speakers: Speaker[] = [];
+let loadError: string | null = null;
+
+if (!Number.isInteger(id) || id <= 0) {
+  loadError = 'La ponencia no existe.';
+  Astro.response.status = 404;
+} else {
+  try {
+    const [talkRes, locationsRes, speakersRes] = await Promise.all([
+      getTalk(id),
+      listLocations({ pageSize: 100 }),
+      listSpeakers({ pageSize: 100 }),
+    ]);
+    talk = talkRes;
+    locations = locationsRes.data;
+    speakers = speakersRes.data;
+  } catch (err) {
+    if (err instanceof ApiError) {
+      loadError = messageFor(err.code, err.message);
+      if (err.status === 404) Astro.response.status = 404;
+    } else {
+      loadError = 'No se pudo cargar la ponencia.';
+    }
+  }
+}
+---
+
+<DashboardLayout title={talk ? `Editar: ${talk.title}` : 'Editar ponencia'}>
+  <div class="max-w-3xl space-y-6">
+    {
+      loadError || !talk ? (
+        <ErrorState
+          title="No se pudo cargar la ponencia"
+          description={loadError ?? 'Ponencia no encontrada.'}
+        />
+      ) : (
+        <>
+          <TalkForm
+            client:visible
+            talk={talk}
+            locations={locations}
+            speakers={speakers}
+          />
+          <Card title="Zona de peligro">
+            <p class="mb-3 text-sm text-slate-500">
+              Elimina la ponencia y sus registros de asistencia. Esta acción no se puede deshacer.
+            </p>
+            <ConfirmDeleteButton
+              client:visible
+              url={`/api/talks/${talk.id}`}
+              confirmText={`¿Eliminar definitivamente la ponencia “${talk.title}”?`}
+              redirect="/organizador/ponencias"
+            />
+          </Card>
+        </>
+      )
+    }
+  </div>
+</DashboardLayout>

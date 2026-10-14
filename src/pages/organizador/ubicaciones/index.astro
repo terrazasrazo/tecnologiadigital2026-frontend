@@ -1,0 +1,116 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import Pagination from '../../../components/ui/Pagination.astro';
+import EmptyState from '../../../components/ui/EmptyState';
+import ErrorState from '../../../components/ui/ErrorState';
+import ConfirmDeleteButton from '../../../components/ui/ConfirmDeleteButton';
+import { list as listLocations } from '../../../lib/api/locations';
+import { ApiError } from '../../../lib/utils';
+import { messageFor } from '../../../lib/errorMessages';
+import type { Location, Paginated } from '../../../lib/types';
+
+const accessToken = Astro.locals.accessToken!;
+const params = Astro.url.searchParams;
+const q = params.get('q')?.trim() || undefined;
+const page = Math.max(1, Number(params.get('page')) || 1);
+const pageSize = 15;
+
+let result: Paginated<Location> | null = null;
+let loadError: string | null = null;
+
+try {
+  result = await listLocations({ search: q, page, pageSize });
+} catch (err) {
+  loadError = err instanceof ApiError ? messageFor(err.code, err.message) : 'No se pudo cargar la lista.';
+}
+---
+
+<DashboardLayout title="Ubicaciones">
+  <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <form method="GET" class="flex flex-wrap items-end gap-3">
+      <div>
+        <label for="q" class="mb-1 block text-sm font-medium text-slate-700">Buscar</label>
+        <input
+          id="q"
+          type="search"
+          name="q"
+          value={q ?? ''}
+          placeholder="Salón, edificio…"
+          class="w-64 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <button
+        type="submit"
+        class="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200"
+      >
+        Buscar
+      </button>
+      {q && (
+        <a href="/organizador/ubicaciones" class="text-sm font-medium text-blue-600 hover:text-blue-700">
+          Limpiar
+        </a>
+      )}
+    </form>
+    <a
+      href="/organizador/ubicaciones/nueva"
+      class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+    >
+      Nueva ubicación
+    </a>
+  </div>
+
+  {
+    loadError ? (
+      <ErrorState title="No se pudieron cargar las ubicaciones" description={loadError} />
+    ) : !result || result.data.length === 0 ? (
+      <EmptyState
+        title={q ? 'Sin resultados' : 'Aún no hay ubicaciones'}
+        description={q ? 'Prueba con otro nombre.' : 'Registra los salones y auditorios del congreso.'}
+        actionHref={q ? undefined : '/organizador/ubicaciones/nueva'}
+        actionLabel={q ? undefined : 'Nueva ubicación'}
+      />
+    ) : (
+      <>
+        <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+          <table class="min-w-full divide-y divide-slate-100 text-sm">
+            <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <tr>
+                <th class="px-5 py-3">Nombre</th>
+                <th class="px-5 py-3">Edificio</th>
+                <th class="px-5 py-3">Capacidad</th>
+                <th class="px-5 py-3">Dirección</th>
+                <th class="px-5 py-3 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              {result.data.map((loc) => (
+                <tr>
+                  <td class="px-5 py-3 font-medium text-slate-900">{loc.name}</td>
+                  <td class="px-5 py-3 text-slate-500">{loc.building ?? '—'}</td>
+                  <td class="px-5 py-3 text-slate-500">{loc.capacity ?? '—'}</td>
+                  <td class="px-5 py-3 text-slate-500">{loc.address ?? '—'}</td>
+                  <td class="px-5 py-3">
+                    <div class="flex justify-end gap-2">
+                      <a
+                        href={`/organizador/ubicaciones/${loc.id}/editar`}
+                        class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                      >
+                        Editar
+                      </a>
+                      <ConfirmDeleteButton
+                        client:visible
+                        url={`/api/locations/${loc.id}`}
+                        confirmText={`¿Eliminar la ubicación “${loc.name}”?`}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <Pagination meta={result.meta} basePath="/organizador/ubicaciones" query={{ q }} />
+      </>
+    )
+  }
+</DashboardLayout>

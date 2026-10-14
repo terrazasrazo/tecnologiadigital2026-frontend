@@ -1,0 +1,10 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import SpeakerAdminForm from '../../../components/speakers/SpeakerAdminForm';
+---
+
+<DashboardLayout title="Nuevo ponente">
+  <div class="max-w-2xl">
+    <SpeakerAdminForm client:visible />
+  </div>
+</DashboardLayout>

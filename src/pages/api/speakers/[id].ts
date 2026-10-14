@@ -2,8 +2,11 @@ import type { APIRoute } from 'astro';
 import { authProxy } from '../../../lib/api/http';
 
 /**
- * Edición del perfil de ponente (dueño o admin/organizador):
- * `PATCH /api/speakers/:id` (multipart: name, academicDegree, institution,
- * bio y opcionalmente el archivo `photo`).
+ * Gestión de un ponente:
+ * - `PATCH /api/speakers/:id` (dueño o admin/organizador)
+ * - `DELETE /api/speakers/:id` (admin/organizador)
  */
-export const PATCH = authProxy((params) => `/api/speakers/${params.id}`);
+const path = authProxy((params) => `/api/speakers/${params.id}`);
+
+export const PATCH = path;
+export const DELETE = path;

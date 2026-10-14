@@ -1,0 +1,168 @@
+---
+import DashboardLayout from '../../../../layouts/DashboardLayout.astro';
+import Pagination from '../../../../components/ui/Pagination.astro';
+import EmptyState from '../../../../components/ui/EmptyState';
+import ErrorState from '../../../../components/ui/ErrorState';
+import Card from '../../../../components/ui/Card';
+import Badge from '../../../../components/ui/Badge';
+import AttendanceWindow from '../../../../components/attendance/AttendanceWindow';
+import AttendanceTable from '../../../../components/attendance/AttendanceTable.astro';
+import QRGenerator from '../../../../components/attendance/QRGenerator';
+import ManualCheckIn from '../../../../components/attendance/ManualCheckIn';
+import { getById as getTalk } from '../../../../lib/api/talks';
+import { listRegistrations } from '../../../../lib/api/attendance';
+import { ApiError } from '../../../../lib/utils';
+import { messageFor } from '../../../../lib/errorMessages';
+import { REGISTRATION_STATUS_LABELS, TALK_STATUS_LABELS } from '../../../../lib/constants';
+import type { Paginated, Registration, RegistrationStatus, Talk } from '../../../../lib/types';
+
+const id = Number(Astro.params.id);
+const params = Astro.url.searchParams;
+const statusParam = params.get('status');
+const status: RegistrationStatus | undefined =
+  statusParam === 'registered' || statusParam === 'attended' || statusParam === 'cancelled'
+    ? statusParam
+    : undefined;
+const page = Math.max(1, Number(params.get('page')) || 1);
+const pageSize = 15;
+
+let talk: Talk | null = null;
+let regs: Paginated<Registration> | null = null;
+let loadError: string | null = null;
+
+if (!Number.isInteger(id) || id <= 0) {
+  loadError = 'La ponencia no existe.';
+  Astro.response.status = 404;
+} else {
+  try {
+    const [talkRes, regsRes] = await Promise.all([
+      getTalk(id),
+      listRegistrations(Astro.locals.accessToken!, id, { status, page, pageSize }),
+    ]);
+    talk = talkRes;
+    regs = regsRes;
+  } catch (err) {
+    if (err instanceof ApiError) {
+      loadError = messageFor(err.code, err.message);
+      if (err.status === 404) Astro.response.status = 404;
+    } else {
+      loadError = 'No se pudo cargar la asistencia.';
+    }
+  }
+}
+
+const filterLink = (s?: RegistrationStatus) => {
+  const p = new URLSearchParams();
+  if (s) p.set('status', s);
+  const qs = p.toString();
+  return qs ? `/organizador/ponencias/${id}/asistencia?${qs}` : `/organizador/ponencias/${id}/asistencia`;
+};
+
+const statusFilters: Array<{ key?: RegistrationStatus; label: string }> = [
+  { key: undefined, label: 'Todas' },
+  { key: 'registered', label: REGISTRATION_STATUS_LABELS.registered },
+  { key: 'attended', label: REGISTRATION_STATUS_LABELS.attended },
+  { key: 'cancelled', label: REGISTRATION_STATUS_LABELS.cancelled },
+];
+---
+
+<DashboardLayout title={talk ? `Asistencia: ${talk.title}` : 'Asistencia'}>
+  {
+    loadError || !talk || !regs ? (
+      <ErrorState
+        title="No se pudo cargar la asistencia"
+        description={loadError ?? 'Ponencia no encontrada.'}
+      />
+    ) : (
+      <div class="space-y-6">
+        <Card title="Datos de la ponencia">
+          <div class="flex flex-wrap items-center gap-3">
+            <h3 class="text-base font-semibold text-slate-900">{talk.title}</h3>
+            <Badge variant={talk.status === 'scheduled' ? 'blue' : 'red'}>
+              {TALK_STATUS_LABELS[talk.status]}
+            </Badge>
+          </div>
+          <dl class="mt-3 grid gap-x-8 gap-y-2 text-sm sm:grid-cols-3">
+            <div>
+              <dt class="text-slate-500">Fecha y horario</dt>
+              <dd class="font-medium text-slate-800">
+                {talk.date} · {talk.startTime.slice(0, 5)}–{talk.endTime.slice(0, 5)}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-slate-500">Ubicación</dt>
+              <dd class="font-medium text-slate-800">{talk.location?.name ?? '—'}</dd>
+            </div>
+            <div>
+              <dt class="text-slate-500">Ponentes</dt>
+              <dd class="font-medium text-slate-800">
+                {talk.speakers.length > 0
+                  ? talk.speakers.map((s) => s.name).join(', ')
+                  : '—'}
+              </dd>
+            </div>
+          </dl>
+          <div class="mt-3">
+            <AttendanceWindow
+              opensAt={talk.attendanceWindow.opensAt}
+              closesAt={talk.attendanceWindow.closesAt}
+            />
+          </div>
+        </Card>
+
+        <div class="grid gap-6 lg:grid-cols-2">
+          <Card title="QR de asistencia">
+            <QRGenerator client:visible talkId={talk.id} />
+          </Card>
+          <Card title="Check-in manual">
+            <ManualCheckIn client:visible talkId={talk.id} />
+          </Card>
+        </div>
+
+        <div>
+          <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap gap-2">
+              {statusFilters.map((f) => (
+                <a
+                  href={filterLink(f.key)}
+                  aria-current={status === f.key ? 'page' : undefined}
+                  class:list={[
+                    'rounded-full px-3 py-1.5 text-xs font-semibold',
+                    status === f.key
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
+                  ]}
+                >
+                  {f.label}
+                </a>
+              ))}
+            </div>
+            <p class="text-sm text-slate-500">
+              {regs.meta.total} registro{regs.meta.total === 1 ? '' : 's'}
+            </p>
+          </div>
+
+          {regs.data.length === 0 ? (
+            <EmptyState
+              title="Sin registros"
+              description={
+                status
+                  ? 'Ningún registro con este estado.'
+                  : 'Aún no hay asistentes inscritos. Comparte la ponencia o usa el QR.'
+              }
+            />
+          ) : (
+            <>
+              <AttendanceTable registrations={regs.data} />
+              <Pagination
+                meta={regs.meta}
+                basePath={`/organizador/ponencias/${talk.id}/asistencia`}
+                query={{ status }}
+              />
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
+</DashboardLayout>

@@ -36,6 +36,8 @@ const MESSAGES: Record<string, string> = {
   INVALID_QR: 'El código QR no es válido para esta ponencia.',
   NOT_ELIGIBLE: 'Aún no cumples los requisitos para la constancia.',
   TALK_TIME_CONFLICT: 'La horaria se solapa con otra ponencia.',
+  INVALID_TIME_RANGE: 'La hora de fin debe ser posterior a la hora de inicio.',
+  CERTIFICATE_FILE_MISSING: 'El PDF de la constancia no está disponible. Genera la constancia de nuevo.',
   EMAIL_IN_USE_DUP: 'Ese correo ya está registrado.',
   INVALID_FILE_TYPE: 'Formato de imagen no permitido (usa JPG, PNG o WEBP).',
   LIMIT_FILE_SIZE: 'La imagen no puede superar 5 MB.',

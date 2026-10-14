@@ -1,0 +1,63 @@
+---
+import DashboardLayout from '../../../../layouts/DashboardLayout.astro';
+import LocationForm from '../../../../components/locations/LocationForm';
+import ConfirmDeleteButton from '../../../../components/ui/ConfirmDeleteButton';
+import Card from '../../../../components/ui/Card';
+import ErrorState from '../../../../components/ui/ErrorState';
+import { getById as getLocation } from '../../../../lib/api/locations';
+import { ApiError } from '../../../../lib/utils';
+import { messageFor } from '../../../../lib/errorMessages';
+import type { Location } from '../../../../lib/types';
+
+const id = Number(Astro.params.id);
+let location: Location | null = null;
+let loadError: string | null = null;
+
+if (!Number.isInteger(id) || id <= 0) {
+  loadError = 'La ubicación no existe.';
+  Astro.response.status = 404;
+} else {
+  try {
+    location = await getLocation(id);
+  } catch (err) {
+    if (err instanceof ApiError) {
+      loadError = messageFor(err.code, err.message);
+      if (err.status === 404) Astro.response.status = 404;
+    } else {
+      loadError = 'No se pudo cargar la ubicación.';
+    }
+  }
+}
+---
+
+<DashboardLayout title={location ? `Editar: ${location.name}` : 'Editar ubicación'}>
+  {
+    loadError || !location ? (
+      <ErrorState title="No se pudo cargar la ubicación" description={loadError ?? 'Ubicación no encontrada.'} />
+    ) : (
+      <div class="max-w-2xl space-y-6">
+        <LocationForm
+          client:visible
+          locationId={location.id}
+          initial={{
+            name: location.name,
+            building: location.building,
+            capacity: location.capacity,
+            address: location.address,
+          }}
+        />
+        <Card title="Zona de peligro">
+          <p class="mb-3 text-sm text-slate-500">
+            No se puede eliminar si tiene ponencias asignadas.
+          </p>
+          <ConfirmDeleteButton
+            client:visible
+            url={`/api/locations/${location.id}`}
+            confirmText={`¿Eliminar la ubicación “${location.name}”?`}
+            redirect="/organizador/ubicaciones"
+          />
+        </Card>
+      </div>
+    )
+  }
+</DashboardLayout>

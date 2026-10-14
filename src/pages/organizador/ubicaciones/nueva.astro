@@ -1,0 +1,10 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import LocationForm from '../../../components/locations/LocationForm';
+---
+
+<DashboardLayout title="Nueva ubicación">
+  <div class="max-w-2xl">
+    <LocationForm client:visible />
+  </div>
+</DashboardLayout>

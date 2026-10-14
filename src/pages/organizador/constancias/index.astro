@@ -1,0 +1,133 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import Pagination from '../../../components/ui/Pagination.astro';
+import EmptyState from '../../../components/ui/EmptyState';
+import ErrorState from '../../../components/ui/ErrorState';
+import { list as listCertificates } from '../../../lib/api/certificates';
+import { ApiError } from '../../../lib/utils';
+import { messageFor } from '../../../lib/errorMessages';
+import type { Certificate, Paginated } from '../../../lib/types';
+
+const accessToken = Astro.locals.accessToken!;
+const params = Astro.url.searchParams;
+const q = params.get('q')?.trim() || undefined;
+const page = Math.max(1, Number(params.get('page')) || 1);
+const pageSize = 15;
+
+let result: Paginated<Certificate> | null = null;
+let loadError: string | null = null;
+
+try {
+  result = await listCertificates(accessToken, { search: q, page, pageSize });
+} catch (err) {
+  loadError =
+    err instanceof ApiError ? messageFor(err.code, err.message) : 'No se pudo cargar la lista.';
+}
+
+const fmt = (iso: string) =>
+  new Date(iso).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+---
+
+<DashboardLayout title="Constancias">
+  <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <form method="GET" class="flex flex-wrap items-end gap-3">
+      <div>
+        <label for="q" class="mb-1 block text-sm font-medium text-slate-700">Buscar</label>
+        <input
+          id="q"
+          type="search"
+          name="q"
+          value={q ?? ''}
+          placeholder="Código o nombre…"
+          class="w-64 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <button
+        type="submit"
+        class="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200"
+      >
+        Buscar
+      </button>
+      {
+        q && (
+          <a
+            href="/organizador/constancias"
+            class="pb-2 text-sm font-medium text-blue-600 hover:text-blue-700"
+          >
+            Limpiar
+          </a>
+        )
+      }
+    </form>
+    <a
+      href="/organizador/constancias/nueva"
+      class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+    >
+      Emitir constancia
+    </a>
+  </div>
+
+  {
+    loadError ? (
+      <ErrorState title="No se pudieron cargar las constancias" description={loadError} />
+    ) : !result || result.data.length === 0 ? (
+      <EmptyState
+        title={q ? 'Sin resultados' : 'Aún no hay constancias'}
+        description={
+          q
+            ? 'Prueba con otro código o nombre.'
+            : 'Emite la primera constancia de un asistente que ya cumplió el requisito.'
+        }
+        actionHref={q ? undefined : '/organizador/constancias/nueva'}
+        actionLabel={q ? undefined : 'Emitir constancia'}
+      />
+    ) : (
+      <>
+        <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+          <table class="min-w-full divide-y divide-slate-100 text-sm">
+            <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <tr>
+                <th class="px-5 py-3">Código</th>
+                <th class="px-5 py-3">Usuario</th>
+                <th class="px-5 py-3">Emitida</th>
+                <th class="px-5 py-3">Contenido</th>
+                <th class="px-5 py-3 text-right">PDF</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              {
+                result.data.map((cert) => (
+                  <tr>
+                    <td class="px-5 py-3 font-mono text-xs font-semibold text-slate-900">
+                      {cert.code}
+                    </td>
+                    <td class="px-5 py-3">
+                      <p class="font-medium text-slate-900">
+                        {cert.user ? `${cert.user.name} ${cert.user.lastName}` : `Usuario #${cert.userId}`}
+                      </p>
+                      <p class="text-xs text-slate-500">{cert.user?.email ?? ''}</p>
+                    </td>
+                    <td class="px-5 py-3 text-slate-500">{fmt(cert.issuedAt)}</td>
+                    <td class="px-5 py-3 text-slate-500">
+                      {cert.talksCount} ponencia{cert.talksCount === 1 ? '' : 's'} ·{' '}
+                      {cert.hoursTotal} h
+                    </td>
+                    <td class="px-5 py-3 text-right">
+                      <a
+                        href={`/api/certificates/${cert.id}/download`}
+                        class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                      >
+                        Descargar
+                      </a>
+                    </td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+        <Pagination meta={result.meta} basePath="/organizador/constancias" query={{ q }} />
+      </>
+    )
+  }
+</DashboardLayout>

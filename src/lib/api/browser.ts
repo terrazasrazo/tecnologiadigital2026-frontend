@@ -65,6 +65,11 @@ export async function deleteJson<T = unknown>(url: string): Promise<T> {
   return requestJson<T>(url, { method: 'DELETE' });
 }
 
+/** GET JSON a un endpoint de Astro. Lanza `ClientApiError` ante fallos. */
+export async function getJson<T = unknown>(url: string): Promise<T> {
+  return requestJson<T>(url, { method: 'GET' });
+}
+
 /**
  * Envía `multipart/form-data` (p. ej. con archivos). El navegador añade el
  * `Content-Type` con el boundary automáticamente.
