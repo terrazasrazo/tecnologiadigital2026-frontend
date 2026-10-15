@@ -1,0 +1,104 @@
+---
+import DashboardLayout from '../../../../layouts/DashboardLayout.astro';
+import Card from '../../../../components/ui/Card';
+import ErrorState from '../../../../components/ui/ErrorState';
+import ConfirmDeleteButton from '../../../../components/ui/ConfirmDeleteButton';
+import Badge from '../../../../components/ui/Badge';
+import UserForm from '../../../../components/users/UserForm';
+import { getById as getUser } from '../../../../lib/api/users';
+import { ApiError } from '../../../../lib/utils';
+import { messageFor } from '../../../../lib/errorMessages';
+import { ROLE_LABELS, USER_STATUS_LABELS } from '../../../../lib/constants';
+import type { RoleName, User, UserStatus } from '../../../../lib/types';
+
+const id = Number(Astro.params.id);
+const currentUserId = Astro.locals.user!.id;
+let user: User | null = null;
+let loadError: string | null = null;
+
+if (!Number.isInteger(id) || id <= 0) {
+  loadError = 'El usuario no existe.';
+  Astro.response.status = 404;
+} else {
+  try {
+    user = await getUser(Astro.locals.accessToken!, id);
+  } catch (err) {
+    if (err instanceof ApiError) {
+      loadError = messageFor(err.code, err.message);
+      if (err.status === 404) Astro.response.status = 404;
+    } else {
+      loadError = 'No se pudo cargar el usuario.';
+    }
+  }
+}
+---
+
+<DashboardLayout title={user ? `Editar: ${user.name} ${user.lastName}` : 'Editar usuario'}>
+  {
+    loadError || !user ? (
+      <ErrorState title="No se pudo cargar el usuario" description={loadError ?? 'Usuario no encontrado.'} />
+    ) : (
+      <div class="grid max-w-5xl gap-6 lg:grid-cols-2">
+        <Card title="Datos del usuario">
+          <UserForm
+            client:visible
+            userId={user.id}
+            initial={{
+              name: user.name,
+              lastName: user.lastName,
+              email: user.email,
+              entity: user.entity,
+              educationLevel: user.educationLevel,
+              phone: user.phone,
+            }}
+            initialRole={user.role.name}
+            initialStatus={user.status}
+          />
+        </Card>
+
+        <div class="space-y-6">
+          <Card title="Estado de la cuenta">
+            <dl class="space-y-2 text-sm">
+              <div class="flex justify-between gap-3">
+                <dt class="text-slate-500">Rol</dt>
+                <dd class="font-medium text-slate-800">
+                  {ROLE_LABELS[user.role.name as RoleName] ?? user.role.name}
+                </dd>
+              </div>
+              <div class="flex justify-between gap-3">
+                <dt class="text-slate-500">Estado</dt>
+                <dd>
+                  <Badge variant={user.status === 'active' ? 'green' : user.status === 'pending' ? 'amber' : 'slate'}>
+                    {USER_STATUS_LABELS[user.status]}
+                  </Badge>
+                </dd>
+              </div>
+              <div class="flex justify-between gap-3">
+                <dt class="text-slate-500">Correo verificado</dt>
+                <dd class="font-medium text-slate-800">{user.emailVerifiedAt ? 'Sí' : 'No'}</dd>
+              </div>
+            </dl>
+            <p class="mt-4 text-xs text-slate-500">
+              Para cambiar la contraseña del usuario, este puede usar «Olvidé mi contraseña» en el
+              inicio de sesión.
+            </p>
+          </Card>
+
+          {user.id !== currentUserId && (
+            <Card title="Zona de peligro">
+              <p class="mb-3 text-sm text-slate-500">
+                Se elimina el usuario y su historial de inscripciones. No se puede deshacer.
+              </p>
+              <ConfirmDeleteButton
+                client:visible
+                url={`/api/users/${user.id}`}
+                confirmText={`¿Eliminar definitivamente a ${user.name} ${user.lastName}?`}
+                redirect="/admin/usuarios"
+              />
+            </Card>
+          )}
+        </div>
+      </div>
+    )
+  }
+</DashboardLayout>

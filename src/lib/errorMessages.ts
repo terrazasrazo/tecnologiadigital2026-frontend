@@ -42,6 +42,8 @@ const MESSAGES: Record<string, string> = {
   INVALID_FILE_TYPE: 'Formato de imagen no permitido (usa JPG, PNG o WEBP).',
   LIMIT_FILE_SIZE: 'La imagen no puede superar 5 MB.',
   SPEAKER_ALREADY_LINKED: 'Esa cuenta ya tiene un perfil de ponente vinculado.',
+  CANNOT_DELETE_SELF: 'No puedes eliminar tu propia cuenta.',
+  INVALID_ROLE: 'El rol indicado no existe.',
 
   // Infraestructura
   NETWORK_ERROR: 'No se pudo conectar con el servidor del evento.',

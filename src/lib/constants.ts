@@ -64,6 +64,16 @@ export const REGISTRATION_STATUS_LABELS: Record<RegistrationStatus, string> = {
 /** Prefijo de todas las rutas de la API (salvo GET /health) */
 export const API_PREFIX = '/api';
 
+/** Opciones de nivel educativo (perfil de usuario) */
+export const EDUCATION_LEVELS = [
+  'Estudiante',
+  'Licenciatura',
+  'Maestría',
+  'Doctorado',
+  'Docente',
+  'Otro',
+];
+
 /** Ruta de salud del backend */
 export const API_HEALTH = '/health';
 

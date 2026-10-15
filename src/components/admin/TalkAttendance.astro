@@ -1,0 +1,68 @@
+---
+import type { Stats } from '../../lib/types';
+import { TALK_STATUS_LABELS } from '../../lib/constants';
+
+interface Props {
+  talks: Stats['perTalk'];
+}
+
+const { talks } = Astro.props;
+const max = Math.max(...talks.map((t) => t.registered), 1);
+---
+
+<div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+  <table class="min-w-full divide-y divide-slate-100 text-sm">
+    <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+      <tr>
+        <th class="px-5 py-3">Ponencia</th>
+        <th class="px-5 py-3">Fecha</th>
+        <th class="px-5 py-3 w-64">Inscritos / asistieron</th>
+        <th class="px-5 py-3 text-right">Tasa</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      {
+        talks.map((talk) => {
+          const rate =
+            talk.registered > 0
+              ? Math.round((talk.attended / talk.registered) * 100)
+              : 0;
+          const regWidth = Math.max(2, Math.round((talk.registered / max) * 100));
+          const attWidth =
+            talk.registered > 0
+              ? Math.round((talk.attended / talk.registered) * regWidth)
+              : 0;
+          return (
+            <tr>
+              <td class="px-5 py-3">
+                <p class="font-medium text-slate-900">{talk.title}</p>
+                <p class="text-xs text-slate-400">
+                  {talk.startTime.slice(0, 5)}–{talk.endTime.slice(0, 5)} ·{' '}
+                  {TALK_STATUS_LABELS[talk.status]}
+                </p>
+              </td>
+              <td class="px-5 py-3 text-slate-500">{talk.date}</td>
+              <td class="px-5 py-3">
+                <div class="space-y-1">
+                  <div class="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div class="h-2.5 rounded-full bg-blue-400" style={`width: ${regWidth}%`} />
+                  </div>
+                  <div class="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div class="h-2.5 rounded-full bg-emerald-500" style={`width: ${attWidth}%`} />
+                  </div>
+                  <p class="text-xs text-slate-500">
+                    {talk.attended}/{talk.registered || 0} ·{' '}
+                    <span class="text-slate-400">asistieron/inscritos</span>
+                  </p>
+                </div>
+              </td>
+              <td class="px-5 py-3 text-right font-semibold tabular-nums text-slate-700">
+                {rate}%
+              </td>
+            </tr>
+          );
+        })
+      }
+    </tbody>
+  </table>
+</div>

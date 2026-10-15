@@ -1,0 +1,48 @@
+---
+interface Item {
+  label: string;
+  count: number;
+}
+
+interface Props {
+  title: string;
+  items: Item[];
+  /** Texto cuando no hay datos. */
+  empty?: string;
+}
+
+const { title, items, empty = 'Sin datos todavía.' } = Astro.props;
+const max = Math.max(...items.map((i) => i.count), 1);
+const total = items.reduce((sum, i) => sum + i.count, 0);
+---
+
+<section class="rounded-xl border border-slate-200 bg-white p-5">
+  <div class="mb-4 flex items-baseline justify-between gap-3">
+    <h3 class="text-sm font-semibold text-slate-900">{title}</h3>
+    <span class="text-xs text-slate-400">{total} en total</span>
+  </div>
+  {
+    items.length === 0 ? (
+      <p class="text-sm text-slate-500">{empty}</p>
+    ) : (
+      <ul class="space-y-3">
+        {items.map((item) => (
+          <li>
+            <div class="mb-1 flex items-baseline justify-between gap-2 text-sm">
+              <span class="truncate text-slate-700">{item.label}</span>
+              <span class="shrink-0 font-semibold tabular-nums text-slate-900">
+                {item.count}
+              </span>
+            </div>
+            <div class="h-2 overflow-hidden rounded-full bg-slate-100">
+              <div
+                class="h-2 rounded-full bg-blue-500"
+                style={`width: ${Math.max(4, Math.round((item.count / max) * 100))}%`}
+              />
+            </div>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</section>

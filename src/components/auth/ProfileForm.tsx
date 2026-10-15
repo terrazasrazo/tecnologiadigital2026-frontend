@@ -3,6 +3,7 @@ import Button from '../ui/Button';
 import { Input, Select } from '../ui/Input';
 import { ClientApiError, postJson } from '../../lib/api/browser';
 import { fieldErrors, messageFor } from '../../lib/errorMessages';
+import { EDUCATION_LEVELS } from '../../lib/constants';
 
 export interface ProfileInitial {
   name: string;
@@ -12,15 +13,6 @@ export interface ProfileInitial {
   educationLevel: string | null;
   phone: string | null;
 }
-
-const EDUCATION_LEVELS = [
-  'Estudiante',
-  'Licenciatura',
-  'Maestría',
-  'Doctorado',
-  'Docente',
-  'Otro',
-];
 
 /** Edición de los datos personales (`PATCH /api/users/me`). */
 export default function ProfileForm({ initial }: { initial: ProfileInitial }) {

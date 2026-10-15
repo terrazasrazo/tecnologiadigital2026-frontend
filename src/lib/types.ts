@@ -275,3 +275,49 @@ export interface CertificateVerify {
   hoursTotal: number;
   issuedAt: string;
 }
+
+// ---------------------------------------------------------------------------
+// Administración (M7)
+// ---------------------------------------------------------------------------
+
+/** Umbral de elegibilidad configurable desde `/api/settings`. */
+export interface CertificateSettings {
+  metric: 'talks' | 'hours' | 'both';
+  minTalks: number;
+  minHours: number;
+}
+
+export interface SettingsResponse {
+  certificate: CertificateSettings;
+}
+
+/** Respuesta de `GET /api/stats` (vista agregada para el panel admin). */
+export interface Stats {
+  users: {
+    total: number;
+    active: number;
+    pending: number;
+    inactive: number;
+    byRole: Array<{ role: RoleName; count: number }>;
+    byEntity: Array<{ entity: string; count: number }>;
+    byEducationLevel: Array<{ educationLevel: string; count: number }>;
+  };
+  speakers: { total: number };
+  locations: { total: number };
+  talks: {
+    total: number;
+    byStatus: Array<{ status: TalkStatus; count: number }>;
+  };
+  certificates: { total: number };
+  attendance: { registered: number; attended: number; rate: number };
+  perTalk: Array<{
+    id: number;
+    title: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    status: TalkStatus;
+    registered: number;
+    attended: number;
+  }>;
+}

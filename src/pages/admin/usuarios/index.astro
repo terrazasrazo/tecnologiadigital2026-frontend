@@ -1,0 +1,212 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import Pagination from '../../../components/ui/Pagination.astro';
+import EmptyState from '../../../components/ui/EmptyState';
+import ErrorState from '../../../components/ui/ErrorState';
+import ConfirmDeleteButton from '../../../components/ui/ConfirmDeleteButton';
+import Badge from '../../../components/ui/Badge';
+import UserStatusToggle from '../../../components/users/UserStatusToggle';
+import { list as listUsers } from '../../../lib/api/users';
+import { ApiError } from '../../../lib/utils';
+import { messageFor } from '../../../lib/errorMessages';
+import { ROLE_LABELS, USER_STATUS_LABELS } from '../../../lib/constants';
+import type { Paginated, RoleName, User, UserStatus } from '../../../lib/types';
+
+const accessToken = Astro.locals.accessToken!;
+const currentUserId = Astro.locals.user!.id;
+const params = Astro.url.searchParams;
+const q = params.get('q')?.trim() || undefined;
+const roleParam = params.get('role');
+const role: RoleName | undefined =
+  roleParam && roleParam in ROLE_LABELS ? (roleParam as RoleName) : undefined;
+const statusParam = params.get('status');
+const status: UserStatus | undefined =
+  statusParam && statusParam in USER_STATUS_LABELS
+    ? (statusParam as UserStatus)
+    : undefined;
+const page = Math.max(1, Number(params.get('page')) || 1);
+const pageSize = 15;
+
+let result: Paginated<User> | null = null;
+let loadError: string | null = null;
+
+try {
+  result = await listUsers(accessToken, { search: q, role, status, page, pageSize });
+} catch (err) {
+  loadError =
+    err instanceof ApiError ? messageFor(err.code, err.message) : 'No se pudo cargar la lista.';
+}
+
+const hasFilters = Boolean(q || role || status);
+const query = { q, role, status };
+
+const STATUS_VARIANT: Record<UserStatus, 'green' | 'amber' | 'slate'> = {
+  active: 'green',
+  pending: 'amber',
+  inactive: 'slate',
+};
+---
+
+<DashboardLayout title="Usuarios">
+  <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <form method="GET" class="flex flex-wrap items-end gap-3">
+      <div>
+        <label for="q" class="mb-1 block text-sm font-medium text-slate-700">Buscar</label>
+        <input
+          id="q"
+          type="search"
+          name="q"
+          value={q ?? ''}
+          placeholder="Nombre o correo…"
+          class="w-52 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label for="role" class="mb-1 block text-sm font-medium text-slate-700">Rol</label>
+        <select
+          id="role"
+          name="role"
+          class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Todos</option>
+          {
+            (Object.keys(ROLE_LABELS) as RoleName[]).map((r) => (
+              <option value={r} selected={r === role}>
+                {ROLE_LABELS[r]}
+              </option>
+            ))
+          }
+        </select>
+      </div>
+      <div>
+        <label for="status" class="mb-1 block text-sm font-medium text-slate-700">Estado</label>
+        <select
+          id="status"
+          name="status"
+          class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Todos</option>
+          {
+            (Object.keys(USER_STATUS_LABELS) as UserStatus[]).map((s) => (
+              <option value={s} selected={s === status}>
+                {USER_STATUS_LABELS[s]}
+              </option>
+            ))
+          }
+        </select>
+      </div>
+      <button
+        type="submit"
+        class="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200"
+      >
+        Filtrar
+      </button>
+      {
+        hasFilters && (
+          <a
+            href="/admin/usuarios"
+            class="pb-2 text-sm font-medium text-blue-600 hover:text-blue-700"
+          >
+            Limpiar
+          </a>
+        )
+      }
+    </form>
+    <a
+      href="/admin/usuarios/nuevo"
+      class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+    >
+      Nuevo usuario
+    </a>
+  </div>
+
+  {
+    loadError ? (
+      <ErrorState title="No se pudieron cargar los usuarios" description={loadError} />
+    ) : !result || result.data.length === 0 ? (
+      <EmptyState
+        title={hasFilters ? 'Sin resultados' : 'Aún no hay usuarios'}
+        description={hasFilters ? 'Prueba con otros filtros.' : 'Crea el primer usuario.'}
+        actionHref={hasFilters ? undefined : '/admin/usuarios/nuevo'}
+        actionLabel={hasFilters ? undefined : 'Nuevo usuario'}
+      />
+    ) : (
+      <>
+        <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+          <table class="min-w-full divide-y divide-slate-100 text-sm">
+            <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <tr>
+                <th class="px-5 py-3">Usuario</th>
+                <th class="px-5 py-3">Rol</th>
+                <th class="px-5 py-3">Estado</th>
+                <th class="px-5 py-3">Verificado</th>
+                <th class="px-5 py-3 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              {result.data.map((user) => {
+                const isSelf = user.id === currentUserId;
+                return (
+                  <tr class:list={[isSelf && 'bg-blue-50/40']}>
+                    <td class="px-5 py-3">
+                      <p class="font-medium text-slate-900">
+                        {user.name} {user.lastName}
+                        {isSelf && (
+                          <span class="ml-2 text-xs font-semibold text-blue-600">(tú)</span>
+                        )}
+                      </p>
+                      <p class="text-xs text-slate-500">{user.email}</p>
+                    </td>
+                    <td class="px-5 py-3">
+                      <Badge variant={user.role.name === 'admin' ? 'red' : 'blue'}>
+                        {ROLE_LABELS[user.role.name as RoleName] ?? user.role.name}
+                      </Badge>
+                    </td>
+                    <td class="px-5 py-3">
+                      <Badge variant={STATUS_VARIANT[user.status]}>
+                        {USER_STATUS_LABELS[user.status]}
+                      </Badge>
+                    </td>
+                    <td class="px-5 py-3">
+                      {user.emailVerifiedAt ? (
+                        <Badge variant="green">Sí</Badge>
+                      ) : (
+                        <Badge variant="amber">No</Badge>
+                      )}
+                    </td>
+                    <td class="px-5 py-3">
+                      <div class="flex justify-end gap-2">
+                        <a
+                          href={`/admin/usuarios/${user.id}/editar`}
+                          class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                        >
+                          Editar
+                        </a>
+                        {!isSelf && (
+                          <>
+                            <UserStatusToggle
+                              client:visible
+                              userId={user.id}
+                              name={`${user.name} ${user.lastName}`}
+                              status={user.status}
+                            />
+                            <ConfirmDeleteButton
+                              client:visible
+                              url={`/api/users/${user.id}`}
+                              confirmText={`¿Eliminar al usuario ${user.name} ${user.lastName}?`}
+                            />
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <Pagination meta={result.meta} basePath="/admin/usuarios" query={query} />
+      </>
+    )
+  }
+</DashboardLayout>

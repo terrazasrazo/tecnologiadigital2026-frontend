@@ -1,0 +1,117 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import ErrorState from '../../components/ui/ErrorState';
+import StatsCard from '../../components/admin/StatsCard.astro';
+import StatsBars from '../../components/admin/StatsBars.astro';
+import TalkAttendance from '../../components/admin/TalkAttendance.astro';
+import { getStats } from '../../lib/api/stats';
+import { ApiError } from '../../lib/utils';
+import { messageFor } from '../../lib/errorMessages';
+import { ROLE_LABELS, TALK_STATUS_LABELS } from '../../lib/constants';
+import type { RoleName, Stats, TalkStatus } from '../../lib/types';
+
+let stats: Stats | null = null;
+let loadError: string | null = null;
+
+try {
+  stats = await getStats(Astro.locals.accessToken!);
+} catch (err) {
+  loadError =
+    err instanceof ApiError ? messageFor(err.code, err.message) : 'No se pudieron cargar las estadísticas.';
+}
+
+const roleItems =
+  stats?.users.byRole.map((r) => ({
+    label: ROLE_LABELS[r.role as RoleName] ?? r.role,
+    count: r.count,
+  })) ?? [];
+const entityItems =
+  stats?.users.byEntity.map((e) => ({ label: e.entity, count: e.count })) ?? [];
+const educationItems =
+  stats?.users.byEducationLevel.map((e) => ({
+    label: e.educationLevel,
+    count: e.count,
+  })) ?? [];
+const statusItems =
+  stats?.talks.byStatus.map((s) => ({
+    label: TALK_STATUS_LABELS[s.status as TalkStatus] ?? s.status,
+    count: s.count,
+  })) ?? [];
+---
+
+<DashboardLayout title="Estadísticas">
+  {
+    loadError || !stats ? (
+      <ErrorState
+        title="No se pudieron cargar las estadísticas"
+        description={loadError ?? 'Inténtalo más tarde.'}
+      />
+    ) : (
+      <div class="space-y-6">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <StatsCard
+            label="Usuarios"
+            value={stats.users.total}
+            hint={`${stats.users.active} activos · ${stats.users.pending} pendientes`}
+            accent="blue"
+          />
+          <StatsCard
+            label="Ponencias"
+            value={stats.talks.total}
+            hint={`${stats.talks.byStatus.find((s) => s.status === 'scheduled')?.count ?? 0} programadas`}
+            accent="slate"
+          />
+          <StatsCard label="Ponentes" value={stats.speakers.total} accent="amber" />
+          <StatsCard label="Ubicaciones" value={stats.locations.total} accent="slate" />
+          <StatsCard
+            label="Constancias"
+            value={stats.certificates.total}
+            accent="green"
+          />
+          <StatsCard
+            label="Tasa de asistencia"
+            value={`${stats.attendance.rate}%`}
+            hint={`${stats.attended} de ${stats.registered} inscritos`}
+            accent={stats.attendance.rate >= 60 ? 'green' : 'red'}
+          />
+        </div>
+
+        <div class="grid gap-6 lg:grid-cols-3">
+          <StatsBars title="Usuarios por rol" items={roleItems} />
+          <StatsBars
+            title="Usuarios por entidad"
+            items={entityItems}
+            empty="Nadie ha registrado su entidad."
+          />
+          <StatsBars
+            title="Usuarios por nivel educativo"
+            items={educationItems}
+            empty="Nadie ha registrado su nivel educativo."
+          />
+        </div>
+
+        <div class="grid gap-6 lg:grid-cols-3">
+          <StatsBars title="Ponencias por estado" items={statusItems} />
+          <div class="lg:col-span-2">
+            <div class="mb-3 flex items-baseline justify-between gap-3">
+              <h3 class="text-sm font-semibold text-slate-900">
+                Asistencia por ponencia
+              </h3>
+              <span class="text-xs text-slate-400">
+                <span class="text-blue-500">■</span> inscritos ·
+                <span class="text-emerald-600">■</span> asistieron
+              </span>
+            </div>
+            {stats.perTalk.length === 0 ? (
+              <div class="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500">
+                Aún no hay ponencias.
+              </div>
+            ) : (
+              <TalkAttendance talks={stats.perTalk} />
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+</DashboardLayout>

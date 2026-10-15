@@ -1,0 +1,66 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import Card from '../../components/ui/Card';
+import ErrorState from '../../components/ui/ErrorState';
+import ConfigForm from '../../components/admin/ConfigForm';
+import { getSettings } from '../../lib/api/settings';
+import { ApiError } from '../../lib/utils';
+import { messageFor } from '../../lib/errorMessages';
+import type { SettingsResponse } from '../../lib/types';
+
+let settings: SettingsResponse | null = null;
+let loadError: string | null = null;
+
+try {
+  settings = await getSettings(Astro.locals.accessToken!);
+} catch (err) {
+  loadError =
+    err instanceof ApiError ? messageFor(err.code, err.message) : 'No se pudo cargar la configuración.';
+}
+
+const METRIC_DESC: Record<string, string> = {
+  talks: 'Se exige un número mínimo de ponencias asistidas.',
+  hours: 'Se exige un mínimo de horas acumuladas en ponencias.',
+  both: 'Se exigen tanto ponencias como horas.',
+};
+---
+
+<DashboardLayout title="Configuración">
+  {
+    loadError || !settings ? (
+      <ErrorState
+        title="No se pudo cargar la configuración"
+        description={loadError ?? 'Inténtalo más tarde.'}
+      />
+    ) : (
+      <div class="grid max-w-5xl gap-6 lg:grid-cols-2">
+        <Card title="Umbral de constancias">
+          <ConfigForm client:visible initial={settings.certificate} />
+        </Card>
+
+        <Card title="Cómo funciona">
+          <ul class="space-y-3 text-sm text-slate-600">
+            <li>
+              <span class="font-semibold text-slate-800">Métrica:</span>{' '}
+              {METRIC_DESC[settings.certificate.metric]}
+            </li>
+            <li>
+              <span class="font-semibold text-slate-800">Ponencias mínimas:</span> el asistente
+              necesita haber asistido a al menos <strong>{settings.certificate.minTalks}</strong>{' '}
+              ponencia{settings.certificate.minTalks === 1 ? '' : 's'} para poder emitir su
+              constancia.
+            </li>
+            <li>
+              <span class="font-semibold text-slate-800">Horas mínimas:</span> acumulado mínimo de
+              horas en ponencias asistidas (<strong>{settings.certificate.minHours}</strong> h).
+            </li>
+          </ul>
+          <p class="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-xs text-amber-800">
+            El umbral se aplica a partir de la siguiente consulta de elegibilidad. Las constancias
+            ya emitidas conservan el umbral con el que se crearon.
+          </p>
+        </Card>
+      </div>
+    )
+  }
+</DashboardLayout>

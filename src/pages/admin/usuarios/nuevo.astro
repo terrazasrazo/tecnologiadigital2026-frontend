@@ -1,0 +1,13 @@
+---
+import DashboardLayout from '../../../layouts/DashboardLayout.astro';
+import Card from '../../../components/ui/Card';
+import UserForm from '../../../components/users/UserForm';
+---
+
+<DashboardLayout title="Nuevo usuario">
+  <div class="max-w-2xl">
+    <Card title="Datos del usuario">
+      <UserForm client:visible />
+    </Card>
+  </div>
+</DashboardLayout>
