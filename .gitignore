@@ -18,4 +18,9 @@ npm-debug.log*
 .vscode/
 .idea/
 .DS_Store
+
+# test artifacts (Playwright)
+test-results/
+playwright-report/
+
 PLAN.md

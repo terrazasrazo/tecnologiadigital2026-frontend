@@ -35,6 +35,23 @@ const speakerPreview = [...speakers]
 
 const days = new Set(talks.map((t) => t.date)).size;
 
+// JSON-LD: evento con el rango real de fechas de la agenda.
+const sortedDates = [...new Set(talks.map((t) => t.date))].sort();
+const site = (import.meta.env.PUBLIC_SITE_URL ?? 'http://localhost:4321').replace(/\/+$/, '');
+const eventJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Event',
+  name: 'Congreso 2026',
+  description:
+    'Congreso de tecnología digital: agenda de ponencias, ponentes, registro de asistentes y constancias.',
+  url: `${site}/`,
+  eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+  ...(sortedDates.length > 0
+    ? { startDate: sortedDates[0], endDate: sortedDates[sortedDates.length - 1] }
+    : {}),
+  organizer: { '@type': 'Organization', name: 'Congreso 2026' },
+};
+
 const user = Astro.locals.user;
 ---
 
@@ -42,6 +59,7 @@ const user = Astro.locals.user;
   title="Congreso 2026 — Información del evento"
   description="Agenda, ponentes y registro de asistentes del Congreso 2026."
 >
+  <script type="application/ld+json" set:html={JSON.stringify(eventJsonLd)} />
   <!-- Hero -->
   <section class="bg-gradient-to-b from-blue-700 to-blue-900 text-white">
     <div class="mx-auto max-w-7xl px-4 py-20 text-center sm:px-6 lg:py-28">

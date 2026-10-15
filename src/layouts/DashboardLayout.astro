@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import Sidebar from '../components/layout/Sidebar.astro';
 import MobileNav from '../components/layout/MobileNav';
+import SeoHead from '../components/layout/SeoHead.astro';
 import type { User } from '../lib/types';
 import { navItemsFor } from '../lib/nav';
 import { HOME_BY_ROLE } from '../lib/constants';
@@ -23,13 +24,7 @@ const currentPath = Astro.url.pathname;
 <!doctype html>
 <html lang="es">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="noindex" />
-    <meta name="generator" content={Astro.generator} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>{title ? `${title} · ` : ''}Congreso 2026</title>
-    {description && <meta name="description" content={description} />}
+    <SeoHead title={title} description={description} noindex />
   </head>
   <body class="min-h-screen bg-slate-100">
     <div class="flex min-h-screen">

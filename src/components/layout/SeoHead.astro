@@ -1,0 +1,47 @@
+---
+/**
+ * Cabecera SEO compartida por los layouts: título con marca, descripción,
+ * canonical, Open Graph/Twitter y `noindex` opcional para zonas privadas.
+ */
+interface Props {
+  /** Título de la página (se le añade «· Congreso 2026» si no incluye la marca). */
+  title?: string;
+  description?: string;
+  /** Páginas privadas (paneles, auth): fuera de índices y de los buscadores. */
+  noindex?: boolean;
+}
+
+const {
+  title = '',
+  description = 'Sitio oficial del congreso: agenda, ponentes, registro de asistentes y constancias.',
+  noindex = false,
+} = Astro.props;
+
+const site = (import.meta.env.PUBLIC_SITE_URL ?? 'http://localhost:4321').replace(/\/+$/, '');
+const canonical = new URL(Astro.url.pathname, site);
+const fullTitle = !title
+  ? 'Congreso 2026'
+  : title.includes('Congreso 2026')
+    ? title
+    : `${title} · Congreso 2026`;
+---
+
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content={description} />
+{noindex && <meta name="robots" content="noindex" />}
+<link rel="canonical" href={canonical} />
+<meta name="generator" content={Astro.generator} />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<title>{fullTitle}</title>
+
+<!-- Open Graph / Twitter -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Congreso 2026" />
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<meta property="og:locale" content="es_MX" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content={fullTitle} />
+<meta name="twitter:description" content={description} />
