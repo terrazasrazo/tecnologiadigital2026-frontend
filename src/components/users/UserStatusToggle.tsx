@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Button from '../ui/Button';
-import { ClientApiError, postJson } from '../../lib/api/browser';
+import { ClientApiError, patchJson } from '../../lib/api/browser';
 import { messageFor } from '../../lib/errorMessages';
 import type { UserStatus } from '../../lib/types';
 
@@ -27,7 +27,7 @@ export default function UserStatusToggle({ userId, name, status }: Props) {
     setLoading(true);
     setError(null);
     try {
-      await postJson(`/api/users/${userId}/status`, { status: target });
+      await patchJson(`/api/users/${userId}/status`, { status: target });
       window.location.reload();
     } catch (err) {
       setError(

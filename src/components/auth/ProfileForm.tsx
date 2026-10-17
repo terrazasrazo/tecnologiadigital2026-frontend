@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import Button from '../ui/Button';
 import { Input, Select } from '../ui/Input';
-import { ClientApiError, postJson } from '../../lib/api/browser';
+import { ClientApiError, patchJson } from '../../lib/api/browser';
 import { fieldErrors, messageFor } from '../../lib/errorMessages';
 import { EDUCATION_LEVELS } from '../../lib/constants';
 
@@ -46,7 +46,7 @@ export default function ProfileForm({ initial }: { initial: ProfileInitial }) {
     setFormError(null);
     setErrors({});
     try {
-      await postJson('/api/users/me', {
+      await patchJson('/api/users/me', {
         name: form.name.trim(),
         lastName: form.lastName.trim(),
         entity: form.entity.trim() || null,

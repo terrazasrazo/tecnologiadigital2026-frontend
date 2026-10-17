@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import Button from '../ui/Button';
 import { Input, Select } from '../ui/Input';
-import { ClientApiError, postJson } from '../../lib/api/browser';
+import { ClientApiError, patchJson, postJson } from '../../lib/api/browser';
 import { fieldErrors, messageFor } from '../../lib/errorMessages';
 import { EDUCATION_LEVELS, ROLE_LABELS, USER_STATUS_LABELS } from '../../lib/constants';
 import type { RoleName, UserStatus } from '../../lib/types';
@@ -68,7 +68,7 @@ export default function UserForm({ userId, initial, initialRole, initialStatus }
 
     try {
       if (isEdit) {
-        await postJson(`/api/users/${userId}`, {
+        await patchJson(`/api/users/${userId}`, {
           name: form.name.trim(),
           lastName: form.lastName.trim(),
           email: form.email.trim().toLowerCase(),

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import Button from '../ui/Button';
 import { Input, Select } from '../ui/Input';
-import { ClientApiError, postJson } from '../../lib/api/browser';
+import { ClientApiError, patchJson } from '../../lib/api/browser';
 import { fieldErrors, messageFor } from '../../lib/errorMessages';
 import type { CertificateSettings } from '../../lib/types';
 
@@ -49,7 +49,7 @@ export default function ConfigForm({ initial }: Props) {
     setSaved(false);
 
     try {
-      const res = await postJson<{ certificate: CertificateSettings }>('/api/settings', {
+      const res = await patchJson<{ certificate: CertificateSettings }>('/api/settings', {
         metric: form.metric,
         minTalks: Number(form.minTalks),
         minHours: Number(form.minHours),

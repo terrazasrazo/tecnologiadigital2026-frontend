@@ -25,9 +25,11 @@ export default defineConfig({
       timeout: 30_000,
     },
     {
+      // Puerto en vez de URL: el backend puede montarse bajo BASE_PATH
+      // (p. ej. /td2026) y /health no sería representativo.
       command: 'npm run dev',
       cwd: '../backend',
-      url: 'http://localhost:3000/health',
+      port: 3000,
       reuseExistingServer: true,
       timeout: 60_000,
     },

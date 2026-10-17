@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import Button from '../ui/Button';
 import { Input, Textarea, Select } from '../ui/Input';
-import { ClientApiError, postJson } from '../../lib/api/browser';
+import { ClientApiError, patchJson, postJson } from '../../lib/api/browser';
 import { fieldErrors, messageFor } from '../../lib/errorMessages';
 
 export interface LocationFormInitial {
@@ -57,7 +57,7 @@ export default function LocationForm({ locationId, initial }: Props) {
 
     try {
       if (locationId) {
-        await postJson(`/api/locations/${locationId}`, payload);
+        await patchJson(`/api/locations/${locationId}`, payload);
       } else {
         await postJson('/api/locations', payload);
       }

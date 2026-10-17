@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import Button from '../ui/Button';
 import { Input, Textarea, Select } from '../ui/Input';
-import { ClientApiError, postJson } from '../../lib/api/browser';
+import { ClientApiError, patchJson, postJson } from '../../lib/api/browser';
 import { fieldErrors, messageFor } from '../../lib/errorMessages';
 import { toLocalInputValue } from '../../lib/utils';
 import type { Location, Speaker, Talk, TalkStatus } from '../../lib/types';
@@ -92,7 +92,7 @@ export default function TalkForm({ talk, locations, speakers }: Props) {
 
     try {
       if (talk) {
-        await postJson(`/api/talks/${talk.id}`, payload);
+        await patchJson(`/api/talks/${talk.id}`, payload);
         window.location.reload();
       } else {
         await postJson('/api/talks', payload);
