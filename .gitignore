@@ -22,5 +22,6 @@ npm-debug.log*
 # test artifacts (Playwright)
 test-results/
 playwright-report/
+backend/
 
 PLAN.md
