@@ -63,16 +63,16 @@ export default function UserPicker({ role = 'asistente', current, value, onChang
     return (
       <div className="flex items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-blue-900">{selected.label}</p>
+          <p className="truncate text-sm font-semibold text-[#05003b]">{selected.label}</p>
           {!value && (
-            <p className="text-xs text-blue-700">Usuario vinculado actualmente</p>
+            <p className="text-xs text-[#05003b]">Usuario vinculado actualmente</p>
           )}
         </div>
         {!current && (
           <button
             type="button"
             onClick={() => onChange(null)}
-            className="shrink-0 text-sm font-medium text-blue-700 underline hover:text-blue-900"
+            className="shrink-0 text-sm font-medium text-[#05003b] underline hover:no-underline"
           >
             Quitar
           </button>

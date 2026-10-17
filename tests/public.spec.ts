@@ -7,8 +7,8 @@ test.describe('Páginas públicas y SEO', () => {
     const res = await page.goto('/');
     expect(res?.status()).toBe(200);
 
-    await expect(page).toHaveTitle(/Congreso 2026/);
-    await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', /Congreso 2026/);
+    await expect(page).toHaveTitle(/Coloquio de Tecnología Digital 2026/);
+    await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', /Coloquio de Tecnología Digital 2026/);
     await expect(page.locator('meta[property="og:description"]')).toHaveAttribute('content', /.+/);
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /\/$/);
 
@@ -26,11 +26,11 @@ test.describe('Páginas públicas y SEO', () => {
 
     await page.goto('/agenda');
     await expect(page.locator('h1').first()).toBeVisible();
-    await expect(page).toHaveTitle(/Agenda · Congreso 2026/);
+    await expect(page).toHaveTitle(/Agenda · Coloquio de Tecnología Digital 2026/);
 
     await page.goto('/ponentes');
     await expect(page.locator('h1').first()).toBeVisible();
-    await expect(page).toHaveTitle(/Ponentes · Congreso 2026/);
+    await expect(page).toHaveTitle(/Ponentes · Coloquio de Tecnología Digital 2026/);
 
     expect(errors).toEqual([]);
   });

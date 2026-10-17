@@ -84,7 +84,7 @@ export default function LoginForm({ redirectTo }: Props) {
       <div className="flex items-center justify-end">
         <a
           href="/auth/forgot-password"
-          className="text-sm font-medium text-blue-600 hover:text-blue-700"
+          className="text-sm font-medium text-[#05003b] hover:underline"
         >
           ¿Olvidaste tu contraseña?
         </a>

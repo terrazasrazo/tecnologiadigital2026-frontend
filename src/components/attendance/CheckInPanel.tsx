@@ -166,7 +166,7 @@ export default function CheckInPanel({ talks }: Props) {
         {ordered.length === 0 ? (
           <div className="mt-4 rounded-lg border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">
             Todavía no estás inscrito en ninguna ponencia.{' '}
-            <a href="/agenda" className="font-medium text-blue-600 hover:text-blue-700">
+            <a href="/agenda" className="font-medium text-[#05003b] hover:underline">
               Revisa la agenda
             </a>
           </div>
@@ -179,7 +179,7 @@ export default function CheckInPanel({ talks }: Props) {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate font-medium text-slate-900">
-                        <a href={`/agenda/${talk.id}`} className="hover:text-blue-700">
+                        <a href={`/agenda/${talk.id}`} className="hover:underline">
                           {talk.title}
                         </a>
                       </p>

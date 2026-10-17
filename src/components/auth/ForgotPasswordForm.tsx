@@ -43,7 +43,7 @@ export default function ForgotPasswordForm() {
         </p>
         <a
           href="/auth/login"
-          className="mt-3 inline-block font-medium text-blue-600 hover:text-blue-700"
+          className="mt-3 inline-block font-medium text-[#05003b] hover:underline"
         >
           Volver a iniciar sesión
         </a>
@@ -72,7 +72,7 @@ export default function ForgotPasswordForm() {
         Enviar enlace de recuperación
       </Button>
       <p className="text-center text-sm text-slate-500">
-        <a href="/auth/login" className="font-medium text-blue-600 hover:text-blue-700">
+        <a href="/auth/login" className="font-medium text-[#05003b] hover:underline">
           Volver a iniciar sesión
         </a>
       </p>

@@ -105,7 +105,7 @@ const STATUS_VARIANT: Record<UserStatus, 'green' | 'amber' | 'slate'> = {
         hasFilters && (
           <a
             href="/admin/usuarios"
-            class="pb-2 text-sm font-medium text-blue-600 hover:text-blue-700"
+            class="pb-2 text-sm font-medium text-[#05003b] hover:underline"
           >
             Limpiar
           </a>
@@ -152,7 +152,7 @@ const STATUS_VARIANT: Record<UserStatus, 'green' | 'amber' | 'slate'> = {
                       <p class="font-medium text-slate-900">
                         {user.name} {user.lastName}
                         {isSelf && (
-                          <span class="ml-2 text-xs font-semibold text-blue-600">(tú)</span>
+                          <span class="ml-2 text-xs font-semibold text-[#05003b]">(tú)</span>
                         )}
                       </p>
                       <p class="text-xs text-slate-500">{user.email}</p>

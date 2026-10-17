@@ -4,7 +4,7 @@
  * canonical, Open Graph/Twitter y `noindex` opcional para zonas privadas.
  */
 interface Props {
-  /** Título de la página (se le añade «· Congreso 2026» si no incluye la marca). */
+  /** Título de la página (se le añade «· Coloquio de Tecnología Digital 2026» si no incluye la marca). */
   title?: string;
   description?: string;
   /** Páginas privadas (paneles, auth): fuera de índices y de los buscadores. */
@@ -20,10 +20,10 @@ const {
 const site = (import.meta.env.PUBLIC_SITE_URL ?? 'http://localhost:4321').replace(/\/+$/, '');
 const canonical = new URL(Astro.url.pathname, site);
 const fullTitle = !title
-  ? 'Congreso 2026'
-  : title.includes('Congreso 2026')
+  ? 'Coloquio de Tecnología Digital 2026'
+  : title.includes('Coloquio de Tecnología Digital 2026')
     ? title
-    : `${title} · Congreso 2026`;
+    : `${title} · Coloquio de Tecnología Digital 2026`;
 ---
 
 <meta charset="UTF-8" />
@@ -35,9 +35,17 @@ const fullTitle = !title
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <title>{fullTitle}</title>
 
+<!-- Fuentes -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+  rel="stylesheet"
+/>
+
 <!-- Open Graph / Twitter -->
 <meta property="og:type" content="website" />
-<meta property="og:site_name" content="Congreso 2026" />
+<meta property="og:site_name" content="Coloquio de Tecnología Digital 2026" />
 <meta property="og:title" content={fullTitle} />
 <meta property="og:description" content={description} />
 <meta property="og:url" content={canonical} />

@@ -199,7 +199,7 @@ export default function TalkForm({ talk, locations, speakers }: Props) {
         {speakers.length === 0 ? (
           <p className="text-sm text-slate-500">
             No hay ponentes registrados.{' '}
-            <a href="/organizador/ponentes/nuevo" className="font-medium text-blue-600 hover:text-blue-700">
+            <a href="/organizador/ponentes/nuevo" className="font-medium text-[#05003b] hover:underline">
               Crea uno
             </a>
             .
@@ -212,7 +212,7 @@ export default function TalkForm({ talk, locations, speakers }: Props) {
                   type="checkbox"
                   checked={speakerIds.includes(speaker.id)}
                   onChange={() => toggleSpeaker(speaker.id)}
-                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  className="h-4 w-4 rounded border-slate-300 text-[#05003b] focus:ring-blue-500"
                 />
                 {speaker.name}
                 {speaker.institution && (

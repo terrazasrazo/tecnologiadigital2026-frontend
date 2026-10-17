@@ -60,7 +60,7 @@ const quickLinks = [
       <>
         <p class="mb-6 text-sm text-slate-500">
           Hola, <span class="font-semibold text-slate-900">{user.name}</span>. Este es tu resumen
-          en el Congreso 2026.
+          en el Coloquio de Tecnología Digital 2026.
         </p>
 
         {/* Estadísticas */}
@@ -74,7 +74,7 @@ const quickLinks = [
             <p class="mt-1 text-sm text-slate-500">Asistencias registradas</p>
           </div>
           <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p class="text-3xl font-bold text-blue-600">{eligibility?.hoursTotal ?? 0} h</p>
+            <p class="text-3xl font-bold text-[#05003b]">{eligibility?.hoursTotal ?? 0} h</p>
             <p class="mt-1 text-sm text-slate-500">Horas acumuladas</p>
           </div>
         </div>
@@ -86,7 +86,7 @@ const quickLinks = [
         <section class="mt-8">
           <div class="mb-4 flex items-end justify-between">
             <h2 class="text-lg font-semibold text-slate-900">Próximas ponencias</h2>
-            <a href="/app/mis-ponencias" class="text-sm font-semibold text-blue-600 hover:text-blue-700">
+            <a href="/app/mis-ponencias" class="text-sm font-semibold text-[#05003b] hover:underline">
               Ver todas →
             </a>
           </div>
@@ -95,7 +95,7 @@ const quickLinks = [
               <p class="text-sm font-medium text-slate-900">No tienes ponencias próximas</p>
               <p class="mt-1 text-sm text-slate-500">
                 Inscríbete desde la{' '}
-                <a href="/agenda" class="font-medium text-blue-600 hover:text-blue-700">
+                <a href="/agenda" class="font-medium text-[#05003b] hover:underline">
                   agenda
                 </a>{' '}
                 para empezar a acumular horas.
@@ -107,7 +107,7 @@ const quickLinks = [
                 <li class="flex items-center justify-between gap-4 px-5 py-4">
                   <div class="min-w-0">
                     <p class="truncate font-medium text-slate-900">
-                      <a href={`/agenda/${talk!.id}`} class="hover:text-blue-700">
+                      <a href={`/agenda/${talk!.id}`} class="hover:underline">
                         {talk!.title}
                       </a>
                     </p>

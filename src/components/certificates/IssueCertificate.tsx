@@ -54,7 +54,7 @@ export default function IssueCertificate() {
           type="checkbox"
           checked={sendEmail}
           onChange={(e) => setSendEmail(e.target.checked)}
-          className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+          className="h-4 w-4 rounded border-slate-300 text-[#05003b] focus:ring-blue-500"
         />
         Enviar también por correo
       </label>

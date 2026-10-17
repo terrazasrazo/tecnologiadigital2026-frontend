@@ -57,7 +57,7 @@ export default function ResetPasswordForm({ token }: Props) {
         <p className="mt-1">Ya puedes iniciar sesión con tu nueva contraseña.</p>
         <a
           href="/auth/login"
-          className="mt-3 inline-block font-medium text-blue-600 hover:text-blue-700"
+          className="mt-3 inline-block font-medium text-[#05003b] hover:underline"
         >
           Iniciar sesión
         </a>

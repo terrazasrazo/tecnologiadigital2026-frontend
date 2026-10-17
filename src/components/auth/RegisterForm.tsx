@@ -101,7 +101,7 @@ export default function RegisterForm() {
         </div>
         <ResendVerification initialEmail={registeredEmail} />
         <p className="text-center text-sm text-slate-500">
-          <a href="/auth/login" className="font-medium text-blue-600 hover:text-blue-700">
+          <a href="/auth/login" className="font-medium text-[#05003b] hover:underline">
             Ya verifiqué mi correo, iniciar sesión
           </a>
         </p>
