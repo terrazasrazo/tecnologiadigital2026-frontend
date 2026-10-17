@@ -2,6 +2,7 @@ import type { Page } from '@playwright/test';
 
 export const USERS = {
   asistente: { email: 'asistente@tecnologiadigital.dev', password: 'Asistente123!' },
+  ponente: { email: 'ponente@tecnologiadigital.dev', password: 'Ponente123!' },
   organizador: { email: 'organizador@tecnologiadigital.dev', password: 'Organizador123!' },
   admin: { email: 'admin@tecnologiadigital.dev', password: 'Admin123!' },
 } as const;

@@ -121,11 +121,27 @@ export function healthPath(): string {
 
 /**
  * Convierte rutas públicas del backend (fotografías de ponentes, etc.) en URLs
- * absolutas. El backend devuelve rutas tipo `/uploads/ponentes/x.jpg`, que el
- * navegador no puede resolver contra el origen del frontend.
+ * absolutas. El backend puede montarse bajo un `BASE_PATH` (p. ej. `/td2026`)
+ * que ya viene incluido en `API_BASE_URL`, y además lo antepone en las rutas que
+ * devuelve (`photoUrl`), así que evitamos duplicar el prefijo.
  */
 export function publicUrl(path: string | null | undefined): string | null {
   if (!path) return null;
   if (/^https?:\/\//.test(path)) return path;
+
+  let origin = BASE_URL;
+  let prefix = '';
+  try {
+    const url = new URL(BASE_URL);
+    origin = url.origin;
+    prefix = url.pathname.replace(/\/+$/, '');
+  } catch {
+    // BASE_URL no parseable: se usa el join simple de abajo.
+  }
+
+  // La ruta ya trae el prefijo del backend (p. ej. `/td2026/uploads/...`).
+  if (prefix && (path === prefix || path.startsWith(`${prefix}/`))) {
+    return `${origin}${path}`;
+  }
   return apiUrl(BASE_URL, path);
 }
