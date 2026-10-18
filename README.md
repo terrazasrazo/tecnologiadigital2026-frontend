@@ -137,6 +137,27 @@ npm run test:e2e  # 10 e2E: flujos por rol, hidratación de islas, SEO, 404
 
 ## Despliegue
 
+### Netlify (producción recomendada)
+
+El sitio es SSR de Astro y se despliega como **funciones serverless** vía
+`@astrojs/netlify`: el adaptador se activa solo cuando `NETLIFY=true` (Netlify lo
+define en su build); en local siempre se usa el servidor Node. Configuración en
+`netlify.toml` (build `npm run build`, publish `dist`).
+
+Variables a definir en el dashboard de Netlify (Site → Environment variables):
+
+| Variable | Valor |
+| -------- | ----- |
+| `API_BASE_URL` | `https://lat.bunam.unam.mx/td2026` |
+| `PUBLIC_SITE_URL` | URL pública del sitio (p. ej. `https://<sitio>.netlify.app`) |
+| `SESSION_SECRET` | Aleatorio y fuerte; distinto del de desarrollo |
+
+El navegador sigue llamando a su propio origen (`/api/…` → función → backend),
+por lo que no hay CORS ni cambios en el modelo de cookies. El check-in por QR
+requiere HTTPS (Netlify lo sirve por defecto).
+
+### Servidor Node manual
+
 ```bash
 npm run build
 HOST=0.0.0.0 PORT=4321 node dist/server/entry.mjs   # servidor standalone
