@@ -7,4 +7,5 @@
   publish = "dist"
 
 [build.environment]
-  NODE_VERSION = "22"
+  # Astro 7 requiere Node >=22.12; se usa el LTS actual (igual que en local).
+  NODE_VERSION = "24"
