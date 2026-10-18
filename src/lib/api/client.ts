@@ -4,11 +4,15 @@
  * Todas las llamadas se hacen desde el servidor de Astro (SSR), por lo que el
  * access token viaja en la cabecera `Authorization` sin exponerse al cliente.
  */
+import { API_BASE_URL } from 'astro:env/server';
 import { API_PREFIX } from '../constants';
 import { ApiError, apiUrl, toQuery } from '../utils';
 
-/** URL base del backend (variable de entorno `API_BASE_URL`). */
-export const BASE_URL: string = import.meta.env.API_BASE_URL ?? 'http://localhost:3000';
+/**
+ * URL base del backend (variable de entorno `API_BASE_URL`). Se lee en runtime
+ * vía `astro:env` para que su valor no quede incrustado en el build.
+ */
+export const BASE_URL: string = API_BASE_URL;
 
 export type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 
