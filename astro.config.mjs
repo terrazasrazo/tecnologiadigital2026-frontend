@@ -1,5 +1,5 @@
 // @ts-check
-import { defineConfig } from 'astro/config';
+import { defineConfig, envField } from 'astro/config';
 import react from '@astrojs/react';
 import netlify from '@astrojs/netlify';
 import node from '@astrojs/node';
@@ -13,6 +13,17 @@ export default defineConfig({
   // se mantiene el servidor Node para dev, preview y pruebas e2e.
   adapter: process.env.NETLIFY ? netlify() : node({ mode: 'standalone' }),
   integrations: [react()],
+  env: {
+    schema: {
+      // Secreto de servidor: se lee en runtime (no se incrusta en el bundle), así
+      // el valor no queda en el build output.
+      API_BASE_URL: envField.string({
+        context: 'server',
+        access: 'secret',
+        default: 'http://localhost:3000',
+      }),
+    },
+  },
   vite: {
     plugins: [tailwindcss()],
   },
