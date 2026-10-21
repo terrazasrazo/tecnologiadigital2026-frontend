@@ -149,7 +149,7 @@ Variables a definir en el dashboard de Netlify (Site → Environment variables):
 
 | Variable | Valor |
 | -------- | ----- |
-| `API_BASE_URL` | `https://lat.bunam.unam.mx/td2026` |
+| `API_BASE_URL` | URL base del backend de producción (no se versiona; ver dashboard) |
 | `PUBLIC_SITE_URL` | URL pública del sitio (p. ej. `https://<sitio>.netlify.app`) |
 | `SESSION_SECRET` | Aleatorio y fuerte; distinto del de desarrollo |
 
@@ -166,6 +166,6 @@ HOST=0.0.0.0 PORT=4321 node dist/server/entry.mjs   # servidor standalone
 
 Puntos a considerar:
 
-1. **Variables en build time**: `API_BASE_URL` y `PUBLIC_SITE_URL` deben existir al momento de compilar.
-2. El check-in por QR necesita **HTTPS** (la cámara solo se expone en contextos seguros).
+1. **Variables**: `PUBLIC_SITE_URL` debe existir al momento de compilar; `API_BASE_URL` se lee en runtime (debe estar definida en el entorno del servidor).
+2. El enlace del QR debe apuntar a la URL pública del sitio (**HTTPS**), que es el origen que el frontend usa para construir el QR.
 3. Detrás de nginx: `proxy_pass` al puerto del server con soporte de streaming; el frontend no sirve archivos estáticos sensibles (los de `dist/client` los sirve el mismo Node).
