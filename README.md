@@ -11,7 +11,7 @@ Construida con **Astro 7 (SSR)** + **React 19** (islas) + **Tailwind CSS 4**. No
 | Rol | Rutas | Qué puede hacer |
 | --- | ----- | --------------- |
 | Público | `/`, `/agenda`, `/ponentes`, `/verificar` | Información del evento, agenda por día, ponentes y verificación pública de constancias por folio |
-| **Asistente** | `/app/*` | Panel personal, inscribirse/cancelar ponencias, **check-in con QR** (`BarcodeDetector` nativo), descargar constancia en PDF, editar perfil y contraseña |
+| **Asistente** | `/app/*` | Panel personal, inscribirse/cancelar ponencias, **check-in con QR** (URL abierta con la cámara del teléfono), descargar constancia en PDF, editar perfil y contraseña |
 | **Ponente** | `/ponente/*` | Editar semblanza y foto, ver sus ponencias |
 | **Organizador** | `/organizador/*` | CRUD de ponencias, ponentes y ubicaciones; asistencia por ponencia (QR en pantalla + check-in manual); emisión de constancias |
 | **Admin** | `/admin/*` | Estadísticas del evento, gestión de usuarios (alta, edición, estado, baja) y configuración de umbrales de constancias |
@@ -87,8 +87,9 @@ Las islas no hablan directo con el backend: llaman a los endpoints propios del f
 
 ### Check-in por QR
 
-- **Lectura**: API nativa `BarcodeDetector` (Chrome/Edge/Android; requiere **HTTPS** para acceder a la cámara). El payload es un JWT que firma el backend.
-- **Generación** (panel del organizador): librería `qrcode` sobre el token emitido por `GET /api/attendance/talks/:id/qr`.
+- **Lectura**: el QR contiene una **URL completa** al frontend (`/app/checkin?talk=…&token=…`). El asistente la abre con la **cámara nativa de su teléfono**; la página muestra una confirmación y registra la asistencia con el usuario de su sesión (nada se registra por abrir el enlace). No se requiere ningún escáner en el navegador, por lo que funciona en todos los navegadores y sistemas.
+- **Generación** (panel del organizador): librería `qrcode` sobre la URL construida a partir del token emitido por `GET /api/attendance/talks/:id/qr`.
+- **Ingreso manual**: si alguien no puede escanear con la cámara, puede pegar el contenido del QR en `/app/checkin`.
 
 ### SEO
 
@@ -109,7 +110,7 @@ src/
 │   ├── constants.ts   # ROUTES, HOME_BY_ROLE, etiquetas de roles/estados
 │   ├── types.ts       # Tipos del API
 │   ├── errorMessages.ts  # Código de error → mensaje amigable
-│   └── utils.ts       # Fechas, duración, parseQrToken, ApiError…
+│   └── utils.ts       # Fechas, duración, parseQrContent, ApiError…
 ├── middleware/auth.ts # Refresh + guardas por rol
 ├── pages/
 │   ├── agenda/ ponentes/ verificar/   # público (SSR + paginación por filtros)

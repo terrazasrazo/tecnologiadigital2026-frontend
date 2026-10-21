@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import Button from '../ui/Button';
 import { ClientApiError, getJson } from '../../lib/api/browser';
 import { messageFor } from '../../lib/errorMessages';
+import { buildCheckInUrl } from '../../lib/utils';
 import type { QRToken } from '../../lib/types';
 
 interface Props {
@@ -31,11 +32,14 @@ export default function QRGenerator({ talkId }: Props) {
     setError(null);
     try {
       const token = await getJson<QRToken>(`/api/attendance/talks/${talkId}/qr`);
-      const url = await QRCode.toDataURL(token.token, {
-        width: 320,
-        margin: 2,
-        color: { dark: '#0f172a', light: '#ffffff' },
-      });
+      const url = await QRCode.toDataURL(
+        buildCheckInUrl(window.location.origin, token.talkId, token.token),
+        {
+          width: 320,
+          margin: 2,
+          color: { dark: '#0f172a', light: '#ffffff' },
+        },
+      );
       setQr(token);
       setDataUrl(url);
     } catch (err) {
@@ -54,8 +58,8 @@ export default function QRGenerator({ talkId }: Props) {
           {dataUrl ? 'Actualizar QR' : 'Generar QR'}
         </Button>
         <p className="text-xs text-slate-500">
-          Proyéctalo al finalizar la ponencia: los asistentes escanean con su cámara desde su
-          panel.
+          Proyéctalo al finalizar la ponencia: los asistentes lo escanean con la cámara de su
+          teléfono y confirman su asistencia.
         </p>
       </div>
 

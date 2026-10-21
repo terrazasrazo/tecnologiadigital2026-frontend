@@ -1,6 +1,7 @@
 ---
 import DashboardLayout from '../../layouts/DashboardLayout.astro';
 import CheckInPanel from '../../components/attendance/CheckInPanel';
+import CheckInConfirm from '../../components/attendance/CheckInConfirm';
 import ErrorState from '../../components/ui/ErrorState';
 import { myRegistrations } from '../../lib/api/attendance';
 import { list as listTalks } from '../../lib/api/talks';
@@ -11,31 +12,46 @@ import type { CheckInTalk } from '../../components/attendance/CheckInPanel';
 
 const token = Astro.locals.accessToken;
 
+// Modo confirmación: el asistente llegó desde el QR (`?talk=&token=`).
+const qrToken = Astro.url.searchParams.get('token')?.trim() ?? '';
+const qrTalk = Number(Astro.url.searchParams.get('talk'));
+const parsedQr =
+  qrToken && Number.isInteger(qrTalk) && qrTalk > 0 ? { talkId: qrTalk, token: qrToken } : null;
+
 let panelTalks: CheckInTalk[] = [];
 let loadError: string | null = null;
+let confirmTalkTitle: string | null = null;
 
-const [regResult, talksResult] = await Promise.allSettled([
-  myRegistrations(token!),
-  fetchAllPages(listTalks, {}),
-]);
-
-if (regResult.status === 'fulfilled' && talksResult.status === 'fulfilled') {
-  const registeredIds = new Set(regResult.value.data.map((r) => r.talkId));
-  panelTalks = talksResult.value
-    .filter((t) => registeredIds.has(t.id) && t.attendanceWindow?.opensAt)
-    .map((t) => ({
-      id: t.id,
-      title: t.title,
-      date: t.date,
-      startTime: t.startTime,
-      endTime: t.endTime,
-      opensAt: t.attendanceWindow.opensAt,
-      closesAt: t.attendanceWindow.closesAt,
-    }));
+if (parsedQr) {
+  // Resolver el título de la ponencia para mostrarlo en la confirmación.
+  const talksResult = await Promise.allSettled([fetchAllPages(listTalks, {})]);
+  const talks = talksResult[0].status === 'fulfilled' ? talksResult[0].value : [];
+  const talk = talks.find((t) => t.id === parsedQr.talkId);
+  confirmTalkTitle = talk?.title ?? `Ponencia #${parsedQr.talkId}`;
 } else {
-  const failed = regResult.status === 'rejected' ? regResult.reason : talksResult.reason;
-  loadError =
-    failed instanceof ApiError ? messageFor(failed.code, failed.message) : 'No se pudo cargar el check-in.';
+  const [regResult, talksResult] = await Promise.allSettled([
+    myRegistrations(token!),
+    fetchAllPages(listTalks, {}),
+  ]);
+
+  if (regResult.status === 'fulfilled' && talksResult.status === 'fulfilled') {
+    const registeredIds = new Set(regResult.value.data.map((r) => r.talkId));
+    panelTalks = talksResult.value
+      .filter((t) => registeredIds.has(t.id) && t.attendanceWindow?.opensAt)
+      .map((t) => ({
+        id: t.id,
+        title: t.title,
+        date: t.date,
+        startTime: t.startTime,
+        endTime: t.endTime,
+        opensAt: t.attendanceWindow.opensAt,
+        closesAt: t.attendanceWindow.closesAt,
+      }));
+  } else {
+    const failed = regResult.status === 'rejected' ? regResult.reason : (talksResult as PromiseRejectedResult).reason;
+    loadError =
+      failed instanceof ApiError ? messageFor(failed.code, failed.message) : 'No se pudo cargar el check-in.';
+  }
 }
 ---
 
@@ -48,7 +64,21 @@ if (regResult.status === 'fulfilled' && talksResult.status === 'fulfilled') {
   </div>
 
   {
-    loadError ? (
+    parsedQr && confirmTalkTitle ? (
+      <div class="mx-auto max-w-lg">
+        <CheckInConfirm
+          client:load
+          talkId={parsedQr.talkId}
+          token={parsedQr.token}
+          talkTitle={confirmTalkTitle}
+        />
+      </div>
+    ) : qrToken ? (
+      <ErrorState
+        title="Enlace no válido"
+        description="El enlace del QR no es válido o está incompleto. Vuelve a escanear el código."
+      />
+    ) : loadError ? (
       <ErrorState title="No se pudo cargar el check-in" description={loadError} />
     ) : (
       <CheckInPanel client:load talks={panelTalks} />

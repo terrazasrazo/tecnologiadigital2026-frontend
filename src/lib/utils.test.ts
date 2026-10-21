@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   ApiError,
   apiUrl,
+  buildCheckInPath,
+  buildCheckInUrl,
   capitalize,
   formatDuration,
   formatDate,
   isJson,
-  parseQrToken,
+  parseQrContent,
   toLocalInputValue,
   toQuery,
 } from './utils';
@@ -45,35 +47,62 @@ describe('toQuery', () => {
   });
 });
 
-describe('parseQrToken', () => {
+describe('parseQrContent', () => {
   const makeJwt = (payload: Record<string, unknown>): string =>
     `eyJhbGciOiJIUzI1NiJ9.${Buffer.from(JSON.stringify(payload)).toString('base64url')}.firma`;
 
-  it('extrae talkId de un token válido', () => {
+  it('extrae talkId y token de una URL de check-in', () => {
     const raw = makeJwt({ talkId: 42, purpose: 'attendance' });
-    expect(parseQrToken(raw)).toEqual({ talkId: 42, token: raw });
+    const url = `https://evento.test/app/checkin?talk=42&token=${raw}`;
+    expect(parseQrContent(url)).toEqual({ talkId: 42, token: raw });
+  });
+
+  it('deriva talkId del token si la URL no trae ?talk', () => {
+    const raw = makeJwt({ talkId: 7, purpose: 'attendance' });
+    expect(parseQrContent(`https://evento.test/app/checkin?token=${raw}`)).toEqual({
+      talkId: 7,
+      token: raw,
+    });
+  });
+
+  it('compatibilidad: acepta el token JWT en crudo', () => {
+    const raw = makeJwt({ talkId: 42, purpose: 'attendance' });
+    expect(parseQrContent(raw)).toEqual({ talkId: 42, token: raw });
   });
 
   it('acepta payload sin purpose', () => {
-    expect(parseQrToken(makeJwt({ talkId: 7 }))).not.toBeNull();
+    expect(parseQrContent(makeJwt({ talkId: 7 }))).not.toBeNull();
   });
 
   it('rechaza purpose distinto de attendance', () => {
-    expect(parseQrToken(makeJwt({ talkId: 42, purpose: 'other' }))).toBeNull();
+    expect(parseQrContent(makeJwt({ talkId: 42, purpose: 'other' }))).toBeNull();
   });
 
   it('rechaza talkId inválido', () => {
-    expect(parseQrToken(makeJwt({ talkId: 0, purpose: 'attendance' }))).toBeNull();
-    expect(parseQrToken(makeJwt({ talkId: -3 }))).toBeNull();
-    expect(parseQrToken(makeJwt({ talkId: 'abc' }))).toBeNull();
-    expect(parseQrToken(makeJwt({}))).toBeNull();
+    expect(parseQrContent(makeJwt({ talkId: 0, purpose: 'attendance' }))).toBeNull();
+    expect(parseQrContent(makeJwt({ talkId: -3 }))).toBeNull();
+    expect(parseQrContent(makeJwt({ talkId: 'abc' }))).toBeNull();
+    expect(parseQrContent(makeJwt({}))).toBeNull();
   });
 
-  it('rechaza cadenas que no son JWT', () => {
-    expect(parseQrToken('')).toBeNull();
-    expect(parseQrToken('   ')).toBeNull();
-    expect(parseQrToken('no-es-jwt')).toBeNull();
-    expect(parseQrToken('a.b')).toBeNull();
+  it('rechaza cadenas que no son JWT ni URL de check-in', () => {
+    expect(parseQrContent('')).toBeNull();
+    expect(parseQrContent('   ')).toBeNull();
+    expect(parseQrContent('no-es-jwt')).toBeNull();
+    expect(parseQrContent('a.b')).toBeNull();
+    expect(parseQrContent('https://evento.test/otra-cosa')).toBeNull();
+  });
+});
+
+describe('buildCheckInPath / buildCheckInUrl', () => {
+  it('construye la ruta con talk y token', () => {
+    expect(buildCheckInPath(5, 'abc')).toBe('/app/checkin?talk=5&token=abc');
+  });
+
+  it('construye la URL absoluta sin barras duplicadas', () => {
+    expect(buildCheckInUrl('https://evento.test/', 5, 'abc')).toBe(
+      'https://evento.test/app/checkin?talk=5&token=abc',
+    );
   });
 });
 

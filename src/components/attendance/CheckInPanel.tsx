@@ -1,11 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import QRScanner from './QRScanner';
 import AttendanceWindow from './AttendanceWindow';
 import Button from '../ui/Button';
 import { Input } from '../ui/Input';
 import { ClientApiError, postJson } from '../../lib/api/browser';
 import { messageFor } from '../../lib/errorMessages';
-import { parseQrToken } from '../../lib/utils';
+import { parseQrContent } from '../../lib/utils';
 import type { CheckinResponse } from '../../lib/types';
 
 export interface CheckInTalk {
@@ -27,7 +26,7 @@ type Result =
   | { kind: 'success'; talkTitle: string; already: boolean }
   | { kind: 'error'; message: string; code?: string };
 
-/** Panel de check-in: escáner QR + ingreso manual + ventanas de asistencia. */
+/** Panel de check-in: ingreso manual + ventanas de asistencia. */
 export default function CheckInPanel({ talks }: Props) {
   const [result, setResult] = useState<Result | null>(null);
   const [busy, setBusy] = useState(false);
@@ -47,7 +46,7 @@ export default function CheckInPanel({ talks }: Props) {
     setManualError(null);
     setResult(null);
 
-    const parsed = parseQrToken(raw);
+    const parsed = parseQrContent(raw);
     if (!parsed) {
       setResult({
         kind: 'error',
@@ -94,14 +93,12 @@ export default function CheckInPanel({ talks }: Props) {
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      {/* Escáner + manual */}
+      {/* Ingreso manual */}
       <div className="flex flex-col gap-4">
-        <QRScanner onDetect={(raw) => void submitToken(raw)} />
-
         <form onSubmit={handleManual} className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4">
           <p className="text-sm font-semibold text-slate-900">Ingreso manual</p>
           <p className="text-xs text-slate-500">
-            Si la cámara no está disponible, pega aquí el contenido del QR.
+            Si no pudiste escanear con la cámara de tu teléfono, pega aquí el contenido del QR.
           </p>
           <Input
             label="Contenido del QR"

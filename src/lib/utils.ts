@@ -1,3 +1,4 @@
+import { ROUTES } from './constants';
 import type { ApiErrorBody } from './types';
 
 /**
@@ -97,16 +98,8 @@ export function toQuery(params: Record<string, string | number | boolean | undef
   return str ? `?${str}` : '';
 }
 
-/**
- * Decodifica el contenido de un QR de asistencia (JWT firmado por el backend
- * con payload `{ talkId, purpose: 'attendance' }`).
- *
- * No verifica la firma — eso lo hace el backend en el check-in; aquí solo se
- * extrae `talkId` para saber a qué endpoint enviar el token.
- */
-export function parseQrToken(raw: string): { talkId: number; token: string } | null {
-  const token = raw.trim();
-  if (!token) return null;
+/** Extrae `talkId` del payload de un JWT sin verificar la firma (solo lectura). */
+function decodeTalkId(token: string): number | null {
   const parts = token.split('.');
   if (parts.length !== 3) return null;
   try {
@@ -115,10 +108,59 @@ export function parseQrToken(raw: string): { talkId: number; token: string } | n
     if (payload.purpose !== undefined && payload.purpose !== 'attendance') return null;
     const talkId = Number(payload.talkId);
     if (!Number.isInteger(talkId) || talkId <= 0) return null;
-    return { talkId, token };
+    return talkId;
   } catch {
     return null;
   }
+}
+
+/**
+ * Ruta del frontend a la que apunta el QR de una ponencia: la página de
+ * confirmación de check-in, con el `talkId` y el token firmado en la query.
+ *
+ * El QR contiene una URL completa para que la app de cámara nativa del
+ * teléfono la abra directamente (no requiere escáner en el navegador).
+ */
+export function buildCheckInPath(talkId: number, token: string): string {
+  return `${ROUTES.checkin}${toQuery({ talk: talkId, token })}`;
+}
+
+/** URL absoluta del QR de asistencia, usando el origen del frontend. */
+export function buildCheckInUrl(origin: string, talkId: number, token: string): string {
+  return `${origin.replace(/\/+$/, '')}${buildCheckInPath(talkId, token)}`;
+}
+
+/**
+ * Interpreta el contenido escaneado de un QR de asistencia.
+ *
+ * Acepta tanto la URL completa que genera el frontend
+ * (`https://…/app/checkin?talk=1&token=…`) como, por compatibilidad, el token
+ * JWT "en crudo" de QRs antiguos. Devuelve `talkId` y `token`, o `null` si el
+ * contenido no es un QR de asistencia válido.
+ */
+export function parseQrContent(raw: string): { talkId: number; token: string } | null {
+  const value = raw.trim();
+  if (!value) return null;
+
+  // Formato actual: URL con `?talk=&token=`.
+  if (/^https?:\/\//i.test(value)) {
+    try {
+      const url = new URL(value);
+      const token = url.searchParams.get('token')?.trim();
+      if (!token) return null;
+      const talk = Number(url.searchParams.get('talk'));
+      if (Number.isInteger(talk) && talk > 0) return { talkId: talk, token };
+      // Si falta `talk`, se deriva del propio token.
+      const talkId = decodeTalkId(token);
+      return talkId ? { talkId, token } : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // Compatibilidad: token JWT en crudo.
+  const talkId = decodeTalkId(value);
+  return talkId ? { talkId, token: value } : null;
 }
 
 /** Une la URL base de la API con un path, evitando barras duplicadas. */
