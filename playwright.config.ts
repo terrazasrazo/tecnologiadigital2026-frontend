@@ -8,6 +8,11 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
+  // Los tests comparten la MISMA base de datos de desarrollo (se crean y
+  // editan usuarios, ponencias y asistencias); en paralelo hay carreras, p. ej.
+  // el test admin desactiva/restaura un usuario mientras otro test entra con
+  // ese mismo usuario. Se ejecutan en serie para que sea determinista.
+  workers: 1,
   timeout: 30_000,
   expect: { timeout: 7_000 },
   reporter: [['list']],
