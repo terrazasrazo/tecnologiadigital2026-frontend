@@ -104,6 +104,7 @@ const statusFilters: Array<{ key?: RegistrationStatus; label: string }> = [
           </dl>
           <div class="mt-3">
             <AttendanceWindow
+              client:visible
               opensAt={talk.attendanceWindow.opensAt}
               closesAt={talk.attendanceWindow.closesAt}
             />
