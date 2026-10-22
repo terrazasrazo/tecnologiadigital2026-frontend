@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import QRCode from 'qrcode';
 import Button from '../ui/Button';
-import { ClientApiError, getJson } from '../../lib/api/browser';
+import { ClientApiError, getJson, postJson } from '../../lib/api/browser';
 import { messageFor } from '../../lib/errorMessages';
 import { buildCheckInUrl } from '../../lib/utils';
 import type { QRToken } from '../../lib/types';
@@ -26,6 +26,9 @@ export default function QRGenerator({ talkId }: Props) {
   const [qr, setQr] = useState<QRToken | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailBusy, setEmailBusy] = useState(false);
+  const [emailMsg, setEmailMsg] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   async function handleGenerate() {
     setLoading(true);
@@ -51,11 +54,45 @@ export default function QRGenerator({ talkId }: Props) {
     }
   }
 
+  /** Descarga el PNG del QR generado (la imagen ya está en el navegador). */
+  function handleDownload() {
+    if (!dataUrl) return;
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = `qr-asistencia-ponencia-${talkId}.png`;
+    link.click();
+  }
+
+  /** Pide al backend que envíe el QR por correo a los ponentes asociados. */
+  async function handleEmail() {
+    setEmailBusy(true);
+    setEmailMsg(null);
+    setEmailError(null);
+    try {
+      const result = await postJson<{ sent: number; recipients: number }>(
+        `/api/attendance/talks/${talkId}/qr/email`,
+      );
+      setEmailMsg(`Correo enviado a ${result.sent} de ${result.recipients} ponente(s).`);
+    } catch (err) {
+      setEmailError(
+        err instanceof ClientApiError ? messageFor(err.code, err.message) : 'Inténtalo de nuevo.',
+      );
+    } finally {
+      setEmailBusy(false);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
         <Button loading={loading} onClick={handleGenerate}>
           {dataUrl ? 'Actualizar QR' : 'Generar QR'}
+        </Button>
+        <Button variant="secondary" onClick={handleDownload} disabled={!dataUrl}>
+          Descargar PNG
+        </Button>
+        <Button variant="secondary" loading={emailBusy} onClick={handleEmail}>
+          Enviar por correo a los ponentes
         </Button>
         <p className="text-xs text-slate-500">
           Proyéctalo al finalizar la ponencia: los asistentes lo escanean con la cámara de su
@@ -66,6 +103,16 @@ export default function QRGenerator({ talkId }: Props) {
       {error && (
         <p role="alert" className="text-sm text-red-600">
           {error}
+        </p>
+      )}
+      {emailError && (
+        <p role="alert" className="text-sm text-red-600">
+          {emailError}
+        </p>
+      )}
+      {emailMsg && (
+        <p role="status" className="text-sm text-emerald-700">
+          {emailMsg}
         </p>
       )}
 

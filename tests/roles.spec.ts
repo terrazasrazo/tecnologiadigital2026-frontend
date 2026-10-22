@@ -35,6 +35,18 @@ test.describe('Flujos por rol', () => {
     await qrButton.click();
 
     await expect(page.locator('img[alt*="QR"]')).toBeVisible();
+
+    // El QR puede descargarse como PNG…
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Descargar PNG' }).click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toMatch(/\.png$/);
+
+    // …y enviarse por correo a los ponentes asociados.
+    await expect(
+      page.getByRole('button', { name: 'Enviar por correo a los ponentes' }),
+    ).toBeVisible();
+
     expect(errors).toEqual([]);
   });
 
