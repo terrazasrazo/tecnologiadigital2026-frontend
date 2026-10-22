@@ -52,7 +52,7 @@ export default function VerifyEmail({ token }: Props) {
         </div>
         <a
           href="/auth/login"
-          className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+          className="inline-flex items-center justify-center rounded-lg bg-[#05003b] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#121a7c]"
         >
           Iniciar sesión
         </a>

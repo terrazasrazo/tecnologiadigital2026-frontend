@@ -60,7 +60,7 @@ export default function MobileNav({ items, panelHref, loggedIn }: MobileNavProps
               <a
                 href={panelHref}
                 onClick={() => setOpen(false)}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-center text-sm font-semibold text-white"
+                className="rounded-lg bg-[#05003b] px-4 py-2 text-center text-sm font-semibold text-white"
               >
                 Mi panel
               </a>
@@ -76,7 +76,7 @@ export default function MobileNav({ items, panelHref, loggedIn }: MobileNavProps
                 <a
                   href="/auth/register"
                   onClick={() => setOpen(false)}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-center text-sm font-semibold text-white"
+                  className="rounded-lg bg-[#05003b] px-4 py-2 text-center text-sm font-semibold text-white"
                 >
                   Registrarse
                 </a>
