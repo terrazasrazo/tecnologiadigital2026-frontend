@@ -26,10 +26,10 @@ const initials = speaker.name
         src={photo}
         alt={`Fotografía de ${speaker.name}`}
         loading="lazy"
-        class="h-44 w-full object-cover"
+        class="aspect-square w-full object-cover"
       />
     ) : (
-      <div class="flex h-44 w-full items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 text-3xl font-bold text-blue-400">
+      <div class="flex aspect-square w-full items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 text-3xl font-bold text-blue-400">
         {initials}
       </div>
     )
