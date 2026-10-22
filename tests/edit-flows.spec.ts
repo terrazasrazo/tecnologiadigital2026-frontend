@@ -56,7 +56,6 @@ test.describe('Flujos de edición (PATCH desde las islas)', () => {
     await login(page, USERS.asistente);
     await page.goto('/app/perfil');
 
-    await page.getByLabel('Teléfono').fill('5500000000');
     const [resp] = await Promise.all([
       page.waitForResponse(
         (r) => r.request().method() === 'PATCH' && new URL(r.url()).pathname === '/api/users/me',

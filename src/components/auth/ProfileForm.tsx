@@ -11,7 +11,6 @@ export interface ProfileInitial {
   email: string;
   entity: string | null;
   educationLevel: string | null;
-  phone: string | null;
 }
 
 /** Edición de los datos personales (`PATCH /api/users/me`). */
@@ -21,7 +20,6 @@ export default function ProfileForm({ initial }: { initial: ProfileInitial }) {
     lastName: initial.lastName,
     entity: initial.entity ?? '',
     educationLevel: initial.educationLevel ?? '',
-    phone: initial.phone ?? '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -51,7 +49,6 @@ export default function ProfileForm({ initial }: { initial: ProfileInitial }) {
         lastName: form.lastName.trim(),
         entity: form.entity.trim() || null,
         educationLevel: form.educationLevel || null,
-        phone: form.phone.trim() || null,
       });
       setSaved(true);
       // Refrescar el layout (sidebar con el nombre actualizado).
@@ -128,13 +125,6 @@ export default function ProfileForm({ initial }: { initial: ProfileInitial }) {
             </option>
           ))}
         </Select>
-        <Input
-          label="Teléfono"
-          type="tel"
-          value={form.phone}
-          error={errors.phone}
-          onChange={(e) => update('phone', e.target.value)}
-        />
       </div>
 
       <Button type="submit" loading={loading} className="w-full sm:w-auto">

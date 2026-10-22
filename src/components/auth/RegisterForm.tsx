@@ -24,7 +24,6 @@ export default function RegisterForm() {
     confirmPassword: '',
     entity: '',
     educationLevel: '',
-    phone: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -68,7 +67,6 @@ export default function RegisterForm() {
         password: form.password,
         ...(form.entity.trim() ? { entity: form.entity.trim() } : {}),
         ...(form.educationLevel ? { educationLevel: form.educationLevel } : {}),
-        ...(form.phone.trim() ? { phone: form.phone.trim() } : {}),
       });
       // Recordar el correo para poder reenviar la verificación.
       localStorage.setItem(STORAGE_KEYS.pendingEmail, form.email.trim());
@@ -204,15 +202,6 @@ export default function RegisterForm() {
                 </option>
               ))}
             </Select>
-            <Input
-              label="Teléfono"
-              name="phone"
-              type="tel"
-              autoComplete="tel"
-              value={form.phone}
-              error={errors.phone}
-              onChange={(e) => update('phone', e.target.value)}
-            />
           </div>
         </div>
       </div>
