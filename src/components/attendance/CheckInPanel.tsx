@@ -23,6 +23,8 @@ interface Props {
   talks: CheckInTalk[];
   /** Formato de hora (default 24 h; lo pasa la página desde la cookie). */
   format?: TimeFormat;
+  /** Ponencias cuya asistencia ya quedó registrada (historial del backend). */
+  attendedTalkIds?: number[];
 }
 
 type Result =
@@ -30,12 +32,16 @@ type Result =
   | { kind: 'error'; message: string; code?: string };
 
 /** Panel de check-in: ingreso manual + ventanas de asistencia. */
-export default function CheckInPanel({ talks, format = '24h' }: Props) {
+export default function CheckInPanel({
+  talks,
+  format = '24h',
+  attendedTalkIds = [],
+}: Props) {
   const [result, setResult] = useState<Result | null>(null);
   const [busy, setBusy] = useState(false);
   const [manual, setManual] = useState('');
   const [manualError, setManualError] = useState<string | null>(null);
-  const [attendedIds, setAttendedIds] = useState<number[]>([]);
+  const [attendedIds, setAttendedIds] = useState<number[]>(attendedTalkIds);
   const [now, setNow] = useState(() => new Date());
 
   // Reloj para que el estado de las ventanas se mantenga fresco.

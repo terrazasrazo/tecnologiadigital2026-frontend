@@ -21,6 +21,7 @@ const parsedQr =
   qrToken && Number.isInteger(qrTalk) && qrTalk > 0 ? { talkId: qrTalk, token: qrToken } : null;
 
 let panelTalks: CheckInTalk[] = [];
+let attendedTalkIds: number[] = [];
 let loadError: string | null = null;
 let confirmTalkTitle: string | null = null;
 
@@ -37,7 +38,10 @@ if (parsedQr) {
   ]);
 
   if (regResult.status === 'fulfilled' && talksResult.status === 'fulfilled') {
-    const registeredIds = new Set(regResult.value.data.map((r) => r.talkId));
+    const registrations = regResult.value.data;
+    const registeredIds = new Set(registrations.map((r) => r.talkId));
+    // Historial de asistencia: la misma señal que usa «Mis ponencias».
+    attendedTalkIds = registrations.filter((r) => r.status === 'attended').map((r) => r.talkId);
     panelTalks = talksResult.value
       .filter((t) => registeredIds.has(t.id) && t.attendanceWindow?.opensAt)
       .map((t) => ({
@@ -83,7 +87,7 @@ if (parsedQr) {
     ) : loadError ? (
       <ErrorState title="No se pudo cargar el check-in" description={loadError} />
     ) : (
-      <CheckInPanel client:load talks={panelTalks} format={timeFormat} />
+      <CheckInPanel client:load talks={panelTalks} format={timeFormat} attendedTalkIds={attendedTalkIds} />
     )
   }
 </DashboardLayout>
