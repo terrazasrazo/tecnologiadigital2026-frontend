@@ -19,7 +19,6 @@ const locationLabel = talk.location
     ? `${talk.location.name} · ${talk.location.building}`
     : talk.location.name
   : 'Ubicación por definir';
-const scheduled = talk.status === 'scheduled';
 ---
 
 <article
@@ -46,8 +45,6 @@ const scheduled = talk.status === 'scheduled';
         {locationLabel}
       </p>
     </div>
-    <Badge variant={scheduled ? 'green' : 'red'}>
-      {scheduled ? 'Programada' : 'Cancelada'}
-    </Badge>
+    {talk.status === 'cancelled' && <Badge variant="red">Cancelada</Badge>}
   </div>
 </article>
