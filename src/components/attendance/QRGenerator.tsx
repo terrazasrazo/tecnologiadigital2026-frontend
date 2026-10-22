@@ -4,24 +4,20 @@ import Button from '../ui/Button';
 import { ClientApiError, getJson, postJson } from '../../lib/api/browser';
 import { messageFor } from '../../lib/errorMessages';
 import { buildCheckInUrl } from '../../lib/utils';
+import { formatClock, type TimeFormat } from '../../lib/format';
 import type { QRToken } from '../../lib/types';
 
 interface Props {
   talkId: number;
-}
-
-function localTime(iso: string): string {
-  return new Date(iso).toLocaleString('es-MX', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
+  /** Formato de hora (default 24 h; lo pasa la página desde la cookie). */
+  format?: TimeFormat;
 }
 
 /**
  * Genera la imagen del QR de la ponencia a partir del token firmado del
  * backend (`GET /api/attendance/talks/:id/qr`), usando la librería `qrcode`.
  */
-export default function QRGenerator({ talkId }: Props) {
+export default function QRGenerator({ talkId, format = '24h' }: Props) {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const [qr, setQr] = useState<QRToken | null>(null);
   const [loading, setLoading] = useState(false);
@@ -128,11 +124,11 @@ export default function QRGenerator({ talkId }: Props) {
             <dl className="mt-2 space-y-1">
               <div className="flex gap-2">
                 <dt className="text-slate-500">Abre:</dt>
-                <dd className="font-medium text-slate-800">{localTime(qr.opensAt)}</dd>
+                <dd className="font-medium text-slate-800">{formatClock(qr.opensAt, format)}</dd>
               </div>
               <div className="flex gap-2">
                 <dt className="text-slate-500">Cierra:</dt>
-                <dd className="font-medium text-slate-800">{localTime(qr.closesAt)}</dd>
+                <dd className="font-medium text-slate-800">{formatClock(qr.closesAt, format)}</dd>
               </div>
             </dl>
             <p className="mt-3 text-xs text-slate-500">

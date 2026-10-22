@@ -4,6 +4,7 @@ import Button from '../ui/Button';
 import { Input } from '../ui/Input';
 import { ClientApiError, postJson } from '../../lib/api/browser';
 import { messageFor } from '../../lib/errorMessages';
+import { formatClock, type TimeFormat } from '../../lib/format';
 import { parseQrContent } from '../../lib/utils';
 import type { CheckinResponse } from '../../lib/types';
 
@@ -20,6 +21,8 @@ export interface CheckInTalk {
 interface Props {
   /** Ponencias inscritas con su ventana de asistencia. */
   talks: CheckInTalk[];
+  /** Formato de hora (default 24 h; lo pasa la página desde la cookie). */
+  format?: TimeFormat;
 }
 
 type Result =
@@ -27,7 +30,7 @@ type Result =
   | { kind: 'error'; message: string; code?: string };
 
 /** Panel de check-in: ingreso manual + ventanas de asistencia. */
-export default function CheckInPanel({ talks }: Props) {
+export default function CheckInPanel({ talks, format = '24h' }: Props) {
   const [result, setResult] = useState<Result | null>(null);
   const [busy, setBusy] = useState(false);
   const [manual, setManual] = useState('');
@@ -181,7 +184,7 @@ export default function CheckInPanel({ talks }: Props) {
                         </a>
                       </p>
                       <p className="mt-0.5 text-xs text-slate-500">
-                        {talk.date} · {talk.startTime} – {talk.endTime}
+                        {talk.date} · {formatClock(talk.startTime, format)} – {formatClock(talk.endTime, format)}
                       </p>
                     </div>
                     {attended && (
@@ -194,6 +197,7 @@ export default function CheckInPanel({ talks }: Props) {
                     className="mt-2"
                     opensAt={talk.opensAt}
                     closesAt={talk.closesAt}
+                    format={format}
                     now={now}
                   />
                 </li>

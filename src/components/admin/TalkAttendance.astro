@@ -1,12 +1,14 @@
 ---
 import type { Stats } from '../../lib/types';
 import { TALK_STATUS_LABELS } from '../../lib/constants';
+import { formatClock, timeFormatFromCookie } from '../../lib/format';
 
 interface Props {
   talks: Stats['perTalk'];
 }
 
 const { talks } = Astro.props;
+const timeFormat = timeFormatFromCookie(Astro.request.headers.get('cookie'));
 const max = Math.max(...talks.map((t) => t.registered), 1);
 ---
 
@@ -37,7 +39,7 @@ const max = Math.max(...talks.map((t) => t.registered), 1);
               <td class="px-5 py-3">
                 <p class="font-medium text-slate-900">{talk.title}</p>
                 <p class="text-xs text-slate-400">
-                  {talk.startTime.slice(0, 5)}–{talk.endTime.slice(0, 5)} ·{' '}
+                  {formatClock(talk.startTime, timeFormat)}–{formatClock(talk.endTime, timeFormat)} ·{' '}
                   {TALK_STATUS_LABELS[talk.status]}
                 </p>
               </td>

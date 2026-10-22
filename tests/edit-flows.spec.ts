@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { USERS, login, trackPageErrors } from './helpers';
+import { USERS, login, trackPageErrors, waitForHydration } from './helpers';
 
 /**
  * Regresión del bug «POST a rutas PATCH → 404»: todas las islas de edición
@@ -49,6 +49,20 @@ test.describe('Flujos de edición (PATCH desde las islas)', () => {
     ).toBeVisible();
 
     expect(errors).toEqual([]);
+  });
+
+  test('asistente: elige formato de hora 12 h (cookie timeFormat)', async ({ page }) => {
+    await login(page, USERS.asistente);
+    await page.goto('/app/perfil');
+
+    await waitForHydration(page, 'Guardar preferencia');
+    await page.getByLabel('Formato de hora').selectOption('12h');
+    await page.getByRole('button', { name: 'Guardar preferencia' }).click();
+    await expect(page.locator('[role="status"]')).toContainText('Preferencia guardada');
+
+    // La preferencia vive en una cookie legible por el SSR; ya está puesta.
+    const cookie = (await page.context().cookies()).find((c) => c.name === 'timeFormat');
+    expect(cookie?.value).toBe('12h');
   });
 
   test('asistente: guardar perfil (PATCH /api/users/me)', async ({ page }) => {

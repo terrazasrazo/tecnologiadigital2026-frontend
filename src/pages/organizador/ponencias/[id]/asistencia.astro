@@ -6,6 +6,7 @@ import ErrorState from '../../../../components/ui/ErrorState';
 import Card from '../../../../components/ui/Card';
 import Badge from '../../../../components/ui/Badge';
 import AttendanceWindow from '../../../../components/attendance/AttendanceWindow';
+import { timeFormatFromCookie, formatClock } from '../../../../lib/format';
 import AttendanceTable from '../../../../components/attendance/AttendanceTable.astro';
 import QRGenerator from '../../../../components/attendance/QRGenerator';
 import ManualCheckIn from '../../../../components/attendance/ManualCheckIn';
@@ -17,6 +18,7 @@ import { REGISTRATION_STATUS_LABELS, TALK_STATUS_LABELS } from '../../../../lib/
 import type { Paginated, Registration, RegistrationStatus, Talk } from '../../../../lib/types';
 
 const id = Number(Astro.params.id);
+const timeFormat = timeFormatFromCookie(Astro.request.headers.get('cookie'));
 const params = Astro.url.searchParams;
 const statusParam = params.get('status');
 const status: RegistrationStatus | undefined =
@@ -86,7 +88,7 @@ const statusFilters: Array<{ key?: RegistrationStatus; label: string }> = [
             <div>
               <dt class="text-slate-500">Fecha y horario</dt>
               <dd class="font-medium text-slate-800">
-                {talk.date} · {talk.startTime.slice(0, 5)}–{talk.endTime.slice(0, 5)}
+                {talk.date} · {formatClock(talk.startTime, timeFormat)}–{formatClock(talk.endTime, timeFormat)}
               </dd>
             </div>
             <div>
@@ -107,13 +109,14 @@ const statusFilters: Array<{ key?: RegistrationStatus; label: string }> = [
               client:visible
               opensAt={talk.attendanceWindow.opensAt}
               closesAt={talk.attendanceWindow.closesAt}
+              format={timeFormat}
             />
           </div>
         </Card>
 
         <div class="grid gap-6 lg:grid-cols-2">
           <Card title="QR de asistencia">
-            <QRGenerator client:visible talkId={talk.id} />
+            <QRGenerator client:visible talkId={talk.id} format={timeFormat} />
           </Card>
           <Card title="Check-in manual">
             <ManualCheckIn client:visible talkId={talk.id} />

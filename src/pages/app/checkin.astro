@@ -8,9 +8,11 @@ import { list as listTalks } from '../../lib/api/talks';
 import { fetchAllPages } from '../../lib/api/helpers';
 import { ApiError } from '../../lib/utils';
 import { messageFor } from '../../lib/errorMessages';
+import { timeFormatFromCookie } from '../../lib/format';
 import type { CheckInTalk } from '../../components/attendance/CheckInPanel';
 
 const token = Astro.locals.accessToken;
+const timeFormat = timeFormatFromCookie(Astro.request.headers.get('cookie'));
 
 // Modo confirmación: el asistente llegó desde el QR (`?talk=&token=`).
 const qrToken = Astro.url.searchParams.get('token')?.trim() ?? '';
@@ -81,7 +83,7 @@ if (parsedQr) {
     ) : loadError ? (
       <ErrorState title="No se pudo cargar el check-in" description={loadError} />
     ) : (
-      <CheckInPanel client:load talks={panelTalks} />
+      <CheckInPanel client:load talks={panelTalks} format={timeFormat} />
     )
   }
 </DashboardLayout>

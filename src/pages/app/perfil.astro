@@ -2,6 +2,7 @@
 import DashboardLayout from '../../layouts/DashboardLayout.astro';
 import ProfileForm from '../../components/auth/ProfileForm';
 import ChangePasswordForm from '../../components/auth/ChangePasswordForm';
+import TimeFormatSetting from '../../components/users/TimeFormatSetting';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import { ROLE_LABELS, USER_STATUS_LABELS } from '../../lib/constants';
@@ -32,6 +33,13 @@ const user = Astro.locals.user!;
 
     <Card title="Cambiar contraseña">
       <ChangePasswordForm client:visible />
+    </Card>
+
+    <Card title="Formato de hora">
+      <p class="mb-3 text-sm text-slate-500">
+        Elige cómo se muestran las horas en la agenda, la asistencia y el check-in.
+      </p>
+      <TimeFormatSetting client:load />
     </Card>
   </div>
 </DashboardLayout>
