@@ -54,3 +54,13 @@ html.js .reveal.is-visible {
     transition: none;
   }
 }
+
+/* Modal de contacto (footer): centrarlo y oscurecer el fondo.
+   Preflight pone `margin: 0` vía `*`, lo que anula el centrado nativo del diálogo. */
+dialog:modal {
+  margin: auto;
+}
+
+dialog::backdrop {
+  background-color: rgb(5 0 59 / 0.6);
+}
