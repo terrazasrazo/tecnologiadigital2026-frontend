@@ -59,10 +59,45 @@ const user = Astro.locals.user;
   title="Coloquio de Tecnología Digital 2026 — Información del evento"
   description="Agenda, ponentes y registro de asistentes del Coloquio de Tecnología Digital 2026."
 >
+  <!--
+    Activa el reveal al scroll. Se ejecuta al parsear (antes de pintar el resto),
+    así que no hay parpadeo: sin JS, sin IntersectionObserver o con movimiento
+    reducido no se añade la clase `js` y todo el contenido se ve normal.
+  -->
+  <script is:inline>
+    (function () {
+      var root = document.documentElement;
+      var reduce =
+        window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduce || !('IntersectionObserver' in window)) return;
+      root.classList.add('js');
+      document.addEventListener('DOMContentLoaded', function () {
+        try {
+          var observer = new IntersectionObserver(
+            function (entries) {
+              entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                  entry.target.classList.add('is-visible');
+                  observer.unobserve(entry.target);
+                }
+              });
+            },
+            { threshold: 0, rootMargin: '0px 0px -60px 0px' },
+          );
+          document.querySelectorAll('.reveal').forEach(function (el) {
+            observer.observe(el);
+          });
+        } catch (error) {
+          root.classList.remove('js');
+        }
+      });
+    })();
+  </script>
+
   <script type="application/ld+json" set:html={JSON.stringify(eventJsonLd)} />
   <!-- Hero -->
   <section class="bg-[radial-gradient(circle_at_center,#121a7c,#05003b)] text-white">
-    <div class="mx-auto max-w-7xl px-4 py-20 text-center sm:px-6 lg:py-28">
+    <div class="reveal mx-auto max-w-7xl px-4 py-20 text-center sm:px-6 lg:py-28">
       <p class="text-sm font-semibold uppercase tracking-widest text-blue-200">
         6 de noviembre 2026
       </p>
@@ -116,7 +151,7 @@ const user = Astro.locals.user;
   {
     upcomingPreview.length > 0 && (
       <section class="mx-auto max-w-7xl px-4 py-14 sm:px-6">
-        <div class="mb-6 flex items-end justify-between gap-4">
+        <div class="reveal mb-6 flex items-end justify-between gap-4">
           <div>
             <h2 class="text-2xl font-bold text-slate-900">Ponencias destacadas</h2>
             <p class="mt-1 text-sm text-slate-500">Consulta los horarios de las ponencias</p>
@@ -129,8 +164,10 @@ const user = Astro.locals.user;
           </a>
         </div>
         <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {upcomingPreview.map((talk) => (
-            <TalkCard talk={talk} showDate={true} />
+          {upcomingPreview.map((talk, index) => (
+            <div class="reveal" style={`transition-delay: ${index * 70}ms`}>
+              <TalkCard talk={talk} showDate={true} />
+            </div>
           ))}
         </div>
       </section>
@@ -142,7 +179,7 @@ const user = Astro.locals.user;
     speakerPreview.length > 0 && (
       <section class="bg-white">
         <div class="mx-auto max-w-7xl px-4 py-14 sm:px-6">
-          <div class="mb-6 flex items-end justify-between gap-4">
+          <div class="reveal mb-6 flex items-end justify-between gap-4">
             <div>
               <h2 class="text-2xl font-bold text-slate-900">Ponentes</h2>
               <p class="mt-1 text-sm text-slate-500">
@@ -157,8 +194,10 @@ const user = Astro.locals.user;
             </a>
           </div>
           <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {speakerPreview.map((speaker) => (
-              <SpeakerCard speaker={speaker} />
+            {speakerPreview.map((speaker, index) => (
+              <div class="reveal" style={`transition-delay: ${index * 70}ms`}>
+                <SpeakerCard speaker={speaker} />
+              </div>
             ))}
           </div>
         </div>
@@ -171,7 +210,7 @@ const user = Astro.locals.user;
     <div class="grid gap-6 sm:grid-cols-2">
       <a
         href={ROUTES.agenda}
-        class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
+        class="reveal rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
       >
         <h2 class="text-lg font-semibold text-slate-900">Agenda</h2>
         <p class="mt-2 text-sm text-slate-500">
@@ -180,7 +219,8 @@ const user = Astro.locals.user;
       </a>
       <a
         href={ROUTES.ponentes}
-        class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
+        class="reveal rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
+        style="transition-delay: 70ms"
       >
         <h2 class="text-lg font-semibold text-slate-900">Ponentes</h2>
         <p class="mt-2 text-sm text-slate-500">
