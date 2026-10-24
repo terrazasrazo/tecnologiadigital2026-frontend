@@ -1,0 +1,43 @@
+---
+/**
+ * Ruta de navegación justo debajo del header: enlaza al index con el nombre del
+ * evento y muestra la sección actual. Se oculta en la portada.
+ */
+const currentPath = Astro.url.pathname.replace(/\/+$/, '') || '/';
+const isHome = currentPath === '/';
+
+/** Sección pública según la ruta (cubre también las páginas de detalle). */
+const SECTIONS: Array<{ prefix: string; label: string }> = [
+  { prefix: '/agenda', label: 'Agenda' },
+  { prefix: '/ponentes', label: 'Ponentes' },
+  { prefix: '/verificar', label: 'Verificar constancia' },
+];
+
+const section = SECTIONS.find(
+  (s) => currentPath === s.prefix || currentPath.startsWith(`${s.prefix}/`),
+)?.label;
+---
+
+{
+  !isHome && (
+    <nav aria-label="Ruta de navegación" class="border-b border-slate-200 bg-white">
+      <ol class="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-4 py-3 text-sm sm:px-6">
+        <li>
+          <a href="/" class="font-medium text-[#05003b] hover:underline">
+            Coloquio de Tecnología Digital
+          </a>
+        </li>
+        {section && (
+          <>
+            <li class="text-slate-300" aria-hidden="true">
+              /
+            </li>
+            <li class="text-slate-500" aria-current="page">
+              {section}
+            </li>
+          </>
+        )}
+      </ol>
+    </nav>
+  )
+}
