@@ -119,7 +119,7 @@ const user = Astro.locals.user;
         <div class="mb-6 flex items-end justify-between gap-4">
           <div>
             <h2 class="text-2xl font-bold text-slate-900">Ponencias destacadas</h2>
-            <p class="mt-1 text-sm text-slate-500">Una selección del programa de esta edición.</p>
+            <p class="mt-1 text-sm text-slate-500">Consulta los horarios de las ponencias</p>
           </div>
           <a
             href={ROUTES.agenda}
@@ -146,7 +146,7 @@ const user = Astro.locals.user;
             <div>
               <h2 class="text-2xl font-bold text-slate-900">Ponentes</h2>
               <p class="mt-1 text-sm text-slate-500">
-                Conoce a los especialistas de esta edición.
+                Conoce a los especialistas que participan
               </p>
             </div>
             <a
@@ -168,14 +168,14 @@ const user = Astro.locals.user;
 
   <!-- Secciones rápidas -->
   <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-    <div class="grid gap-6 sm:grid-cols-3">
+    <div class="grid gap-6 sm:grid-cols-2">
       <a
         href={ROUTES.agenda}
         class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
       >
         <h2 class="text-lg font-semibold text-slate-900">Agenda</h2>
         <p class="mt-2 text-sm text-slate-500">
-          Consulta las ponencias por día y ubícate en el salón correcto.
+          Consulta los horarios de las ponencias
         </p>
       </a>
       <a
@@ -184,7 +184,7 @@ const user = Astro.locals.user;
       >
         <h2 class="text-lg font-semibold text-slate-900">Ponentes</h2>
         <p class="mt-2 text-sm text-slate-500">
-          Conoce a los especialistas que participan en esta edición.
+          Conoce a los especialistas que participan
         </p>
       </a>
       {/* <a
